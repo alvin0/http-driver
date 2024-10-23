@@ -1,0 +1,31 @@
+{
+  "name": "http-driver",
+  "version": "0.1.0",
+  "description": "HttpDriver will help you manage APIs on a per-service basis. HttpDriver utilizes apisauce to wrap and also provides support for fetch.",
+  "main": "src/index.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alvin0/http-driver.git"
+  },
+  "keywords": [
+    "javascript",
+    "axios",
+    "apisauce",
+    "fetch",
+    "typescript",
+    "http",
+    "http-driver"
+  ],
+  "author": "alvin0",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "apisauce": "^3.1.0",
+    "axios": "^1.7.7",
+    "jest": "^29.7.0",
+    "qs": "^6.13.0"
+  }
+}

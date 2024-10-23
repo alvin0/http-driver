@@ -196,7 +196,7 @@ export default function useDriverSwrAxios({
 ### refresh token with interceptor error axios
 
 ```typescript
-import { httpClientApisauce } from "@/utils/httpDrivers/utils";
+import { httpClientApiSauce } from "@/utils/httpDrivers/utils";
 import { DriverBuilder } from "@/utils/httpDrivers/DriverBuilder";
 
 const interceptorError = (
@@ -219,7 +219,7 @@ const interceptorError = (
         isRefreshing = true;
 
         return new Promise((resolve, reject) => {
-            httpClientApisauce.post("/refresh-token").then((refreshAccessToken: any) => {
+            httpClientApiSauce.post("/refresh-token").then((refreshAccessToken: any) => {
                 originalRequest.headers['Authorization'] = 'Bearer ' + refreshAccessToken.accessToken;
 
                 processQueue(null, refreshAccessToken.accessToken);
@@ -244,4 +244,5 @@ export const httpApi = new DriverBuilder()
 
 # Author
 ### Name: Châu Lâm Đình Ái (alvin0)
+### GitHub: https://github.com/alvin0
 ### email: chaulamdinhai@gmail.com

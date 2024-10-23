@@ -15,7 +15,7 @@ export interface ServiceApi {
     id: string;
     url: string;
     method: MethodAPI;
-    version: number;
+    version?: number;
     options?: { [key: string]: any };
     showSuccess?: boolean;
 }

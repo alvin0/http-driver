@@ -1,17 +1,17 @@
 import type { ApisauceInstance } from "apisauce";
 import { create } from "apisauce";
 import qs from "qs";
-import {
-    compileBodyFetchWithContextType,
-    compileService,
-    compileUrlByService,
-    responseFormat,
-} from "./utils";
 import type {
-    DriverConfig,
-    ServiceApi,
-    ServiceUrlCompile,
+  DriverConfig,
+  ServiceApi,
+  ServiceUrlCompile,
 } from "./utils/driver-contracts";
+import {
+  compileBodyFetchWithContextType,
+  compileService,
+  compileUrlByService,
+  responseFormat,
+} from "./utils/index";
 
 export interface DriverResponse {
   ok: boolean;

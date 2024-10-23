@@ -3,7 +3,7 @@
 ## Installer
 
 ```bash
-    npm i apisauce qs @types/qs 
+    npm i @alvin0/http-driver
 ```
 
 ## Target
@@ -18,7 +18,7 @@ A `service` is the lowest-level component declared within the `driver`, and it i
 
 
 ```typescript
-    import { MethodAPI, ServiceApi } from "@/utils/httpDrivers/utils/DriverContracts";
+    import type { DriverInformation, ServiceApi } from "@alvin0/http-driver/src/utils/driver-contracts.js";;
 
     export default [
         {
@@ -42,7 +42,7 @@ To use the `services`, you need to create a `driver`. This registration class al
 
 ```typescript
     // Register Driver
-    import { DriverInformation, ServiceApi } from "@/utils/httpDrivers/utils/DriverContracts";
+    import type { DriverInformation, ServiceApi } from "@alvin0/http-driver/src/utils/driver-contracts.js";;
     import AuthenticationServices from "./AuthenticationServices";
 
     const baseURL: string = 'http://localhost/api';
@@ -196,8 +196,8 @@ export default function useDriverSwrAxios({
 ### refresh token with interceptor error axios
 
 ```typescript
-import { httpClientApiSauce } from "@/utils/httpDrivers/utils";
-import { DriverBuilder } from "@/utils/httpDrivers/DriverBuilder";
+import { httpClientApiSauce } from "@alvin0/http-driver/src/utils/index.js";
+import { DriverBuilder } from "@alvin0/http-driver";
 
 const interceptorError = (
     axiosInstance: any,

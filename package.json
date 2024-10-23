@@ -19,9 +19,12 @@
   "author": "alvin0",
   "license": "MIT",
   "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
     "test": "jest"
   },
   "dependencies": {
+    "@types/qs": "^6.9.16",
     "apisauce": "^3.1.0",
     "axios": "^1.7.7",
     "qs": "^6.13.0"

@@ -1,12 +1,15 @@
 {
-    "compilerOptions": {
-      "target": "es6",
-      "module": "ESNext",
-      "strict": true,
-      "esModuleInterop": true,
-      "forceConsistentCasingInFileNames": true,
-      "skipLibCheck": true
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "target": "es6",
+    "module": "ESNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "paths": {
+      "apisauce": ["./node_modules/apisauce"]
     },
-    "include": ["src"]
-  }
-  
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}

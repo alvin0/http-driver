@@ -1,6 +1,6 @@
 {
   "name": "@alvin0/http-driver",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "HttpDriver will help you manage APIs on a per-service basis. HttpDriver utilizes apisauce to wrap and also provides support for fetch.",
   "main": "dist/index.js",
   "repository": {

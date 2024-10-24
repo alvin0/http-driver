@@ -1,5 +1,5 @@
-import type { HEADERS } from "apisauce";
-import { AxiosRequestConfig } from 'axios';
+import type { HEADERS, PROBLEM_CODE } from "apisauce";
+import { AxiosError, AxiosRequestConfig } from "axios";
 export declare enum MethodAPI {
     get = "get",
     delete = "delete",
@@ -14,7 +14,7 @@ export interface ServiceApi {
     id: string;
     url: string;
     method: MethodAPI;
-    version?: number;
+    version?: number | string;
     options?: {
         [key: string]: any;
     };
@@ -22,7 +22,7 @@ export interface ServiceApi {
 }
 export interface ServiceUrlCompile<T = string> {
     id: T | string;
-    param?: {
+    params?: {
         [key: string]: any;
     };
 }
@@ -35,6 +35,18 @@ export interface DriverConfig {
     baseURL: string;
     services: ServiceApi[];
     withCredentials?: boolean;
+    addRequestTransformAxios?: (callback: (response: any) => void) => void;
+    addTransformResponseAxios?: (callback: (response: any) => void) => void;
+    handleInterceptorErrorAxios?: (axiosInstance: any, processQueue: (error: any, token: string | null) => void, isRefreshing: boolean) => (error: any) => Promise<any>;
+    addTransformResponseFetch?: (response: ResponseFormat) => ResponseFormat;
+    addRequestTransformFetch?: (url: string, requestOptions: {
+        [key: string]: any;
+    }) => {
+        url: string;
+        requestOptions: {
+            [key: string]: any;
+        };
+    };
     [key: string]: any;
 }
 export interface HttpDriverResponse<T> {
@@ -80,11 +92,18 @@ export interface CompileUrlResult {
 }
 export interface ResponseFormat<T = any> {
     ok: boolean;
-    problem: string | null;
-    originalError: string | null;
+    problem: string | null | PROBLEM_CODE;
+    originalError: string | null | AxiosError;
     data: T;
     status: number;
+    config?: AxiosRequestConfig;
     headers?: Headers | null;
     duration: number;
+}
+export interface CompiledServiceInfo {
+    url: string;
+    methods: MethodAPI;
+    version: number | string | undefined;
+    options: Record<string, any>;
 }
 export {};

@@ -3,6 +3,7 @@ import { create } from "apisauce";
 import qs from "qs";
 import type {
   DriverConfig,
+  ResponseFormat,
   ServiceApi,
   ServiceUrlCompile,
 } from "./utils/driver-contracts";
@@ -59,8 +60,8 @@ class Driver {
 
     this.apiSauceInstance.axiosInstance.interceptors.response.use(
       undefined,
-      this.config.handleInterceptorError
-        ? this.config.handleInterceptorError(
+      this.config.handleInterceptorErrorAxios
+        ? this.config.handleInterceptorErrorAxios(
             this.apiSauceInstance.axiosInstance,
             processQueue,
             isRefreshing
@@ -70,15 +71,15 @@ class Driver {
 
     this.apiSauceInstance.addRequestTransform((request: any) => {
       // console.log("Start========LogAxiosRequest========Start",request, "End========LogAxiosRequest========End")
-      if (this.config.addRequestTransform) {
-        this.config.addRequestTransform(request);
+      if (this.config.addRequestTransformAxios) {
+        this.config.addRequestTransformAxios(request);
       }
     });
 
     this.apiSauceInstance.addResponseTransform((response: any) => {
       // console.log("Start========LogAxiosResponse========Start",response, "End========LogAxiosResponse========End")
-      if (this.config.addTransformResponse) {
-        this.config.addTransformResponse(response);
+      if (this.config.addTransformResponseAxios) {
+        this.config.addTransformResponseAxios(response);
       }
     });
 
@@ -87,11 +88,25 @@ class Driver {
 
   appendExecService() {
     const httpProAskDriver = Object.assign(this.apiSauceInstance, {
+      /**
+       * Executes a service call based on the service configuration.
+       *
+       * This function resolves the URL and method details of a service by
+       * calling `compileUrlByService` and then executes the service call
+       * using these details. If the service cannot be found, it returns
+       * an error response using `responseFormat`.
+       *
+       * @param idService - An object containing the service ID and other relevant identifying information.
+       * @param payload - Optional data to be passed with the service request. Can be in any format as required by the specific service.
+       * @param options - Additional request options, such as headers, that may be needed for the request.
+       *
+       * @returns A promise that resolves to the result of the service call. This will return a formatted response if the service cannot be found, or the promise returned by executing the service call.
+       */
       execService: async (
         idService: ServiceUrlCompile,
         payload?: any,
         options?: { [key: string]: any }
-      ) => {
+      ): Promise<ResponseFormat> => {
         const apiInfo = compileUrlByService(
           this.config,
           idService,
@@ -125,17 +140,30 @@ class Driver {
           }
         }
 
-        return await this.apiSauceInstance[apiInfo.method](
+        return (await this.apiSauceInstance[apiInfo.method](
           apiInfo.pathname,
           payloadConvert,
           apiInfo.options
-        );
+        )) as ResponseFormat;
       },
+      /**
+       * Executes a service call using the Fetch API based on service configuration.
+       *
+       * This function constructs the service URL and options by calling `compileUrlByService`
+       * and then performs the service call using Fetch. It handles both success and error cases,
+       * providing a standardized response format.
+       *
+       * @param idService - An object containing the service ID and other relevant identifying information.
+       * @param payload - Optional data to be sent with the request. This data is formatted according to the request's content type.
+       * @param options - Additional options for the request, such as custom headers.
+       *
+       * @returns A promise that resolves to the response of the fetch call. If the fetch operation fails, the promise resolves to an error response formatted by `responseFormat`.
+       */
       execServiceByFetch: async (
         idService: ServiceUrlCompile,
         payload?: any,
         options?: { [key: string]: any }
-      ) => {
+      ): Promise<ResponseFormat> => {
         const apiInfo = compileUrlByService(
           this.config,
           idService,
@@ -156,40 +184,48 @@ class Driver {
         }
 
         try {
-          let optionsRequest = {
+          let url: string = apiInfo.url;
+          let requestOptions = {
             ...apiInfo.options,
           } as {
             [key: string]: any;
           };
 
-          if (!optionsRequest.headers?.hasOwnProperty("Content-Type")) {
-            optionsRequest.headers = {
-              ...optionsRequest.headers,
+          if (!requestOptions.headers?.hasOwnProperty("Content-Type")) {
+            requestOptions.headers = {
+              ...requestOptions.headers,
               "Content-Type": "application/json",
             };
           }
 
           if (apiInfo.method.toUpperCase() != "GET") {
-            optionsRequest = {
-              ...optionsRequest,
+            requestOptions = {
+              ...requestOptions,
               method: apiInfo.method.toUpperCase(),
               body: compileBodyFetchWithContextType(
-                optionsRequest.headers?.["Content-Type"].toLowerCase(),
+                requestOptions.headers?.["Content-Type"].toLowerCase(),
                 apiInfo.payload
               ),
             };
 
-            if (optionsRequest.headers?.hasOwnProperty("Content-Type")) {
+            if (requestOptions.headers?.hasOwnProperty("Content-Type")) {
               if (
-                optionsRequest.headers["Content-Type"].toLowerCase() ==
+                requestOptions.headers["Content-Type"].toLowerCase() ==
                 "multipart/form-data"
               )
-                delete optionsRequest["headers"];
+                delete requestOptions["headers"];
             }
           }
 
+          if (this.config.addRequestTransformFetch) {
+            ({ url, requestOptions } = this.config.addRequestTransformFetch(
+              url,
+              requestOptions
+            ));
+          }
+
           const startFetchTime = performance.now();
-          const res = await fetch(apiInfo.url, optionsRequest);
+          const res = await fetch(url, requestOptions);
           const endFetchTime = performance.now();
           const duration = parseFloat(
             (endFetchTime - startFetchTime).toFixed(2)
@@ -205,27 +241,19 @@ class Driver {
             data = resText;
           }
 
-          if (!res.ok) {
-            return responseFormat({
-              ok: res.ok,
-              duration: duration,
-              status: res.status,
-              headers: res.headers,
-              data: data,
-              problem: res.statusText,
-              originalError: res.statusText,
-            });
-          }
-
-          return responseFormat({
+          const response = responseFormat({
             ok: res.ok,
             duration: duration,
             status: res.status,
             headers: res.headers,
             data: data,
-            problem: null,
-            originalError: null,
+            problem: !res.ok ? res.statusText : null,
+            originalError: !res.ok ? res.statusText : null,
           });
+
+          return this.config.addTransformResponseFetch
+            ? this.config.addTransformResponseFetch(response)
+            : response;
         } catch (error) {
           return responseFormat({
             ok: false,
@@ -237,6 +265,24 @@ class Driver {
           });
         }
       },
+      /**
+       * Retrieves the full URL and request details for a specified service.
+       *
+       * This function constructs the full URL and other pertinent information
+       * for a given service by utilizing the service configuration. If the
+       * service method is 'GET' and payload data is provided, it appends the
+       * payload as query parameters to the URL.
+       *
+       * @param {ServiceUrlCompile} idService - An object containing the service ID and other relevant identifying information.
+       * @param {any} [payload] - Optional data to be converted into query parameters if the service method is 'GET'.
+       *
+       * @returns {object} - An object containing the following properties:
+       *  - `fullUrl`: The complete URL including the base URL and service-specific path.
+       *  - `pathname`: The service-specific path of the URL.
+       *  - `method`: The HTTP method (e.g., 'GET', 'POST') associated with the service.
+       *  - `payload`: The payload object (may be modified to include query parameters).
+       *  - If the service cannot be found, returns an object with `fullUrl`, `method`, `url`, and `payload` set to `null`.
+       */
       getInfoURL: (idService: ServiceUrlCompile, payload?: any) => {
         const apiInfo = compileService(idService, this.config.services);
 
@@ -284,26 +330,45 @@ export class DriverBuilder {
     return this;
   }
 
-  withAddTransformResponse(callback: (response: any) => void) {
-    this.config.addTransformResponse = callback;
+  withAddRequestTransformAxios(callback: (response: any) => void) {
+    this.config.addRequestTransformAxios = callback;
 
     return this;
   }
 
-  withAddRequestTransform(callback: (response: any) => void) {
-    this.config.addRequestTransform = callback;
+  withAddTransformResponseAxios(callback: (response: any) => void) {
+    this.config.addTransformResponseAxios = callback;
 
     return this;
   }
 
-  withHandleInterceptorError(
+  withHandleInterceptorErrorAxios(
     callback: (
       axiosInstance: any,
       processQueue: (error: any, token: string | null) => void,
       isRefreshing: boolean
     ) => (error: any) => Promise<any>
   ) {
-    this.config.handleInterceptorError = callback;
+    this.config.handleInterceptorErrorAxios = callback;
+
+    return this;
+  }
+
+  withAddTransformResponseFetch(
+    callback: (response: ResponseFormat) => ResponseFormat
+  ) {
+    this.config.addTransformResponseFetch = callback;
+
+    return this;
+  }
+
+  withAddRequestTransformFetch(
+    callback: (
+      url: string,
+      requestOptions: { [key: string]: any }
+    ) => { url: string; requestOptions: { [key: string]: any } }
+  ) {
+    this.config.addRequestTransformFetch = callback;
 
     return this;
   }

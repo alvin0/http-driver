@@ -1,3 +1,4 @@
+"use strict";
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -45,25 +46,32 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import { create } from "apisauce";
-import QueryString from "qs";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.httpClientApiSauce = exports.removeNullValues = exports.httpClientFetch = exports.compileBodyFetchWithContextType = exports.compileUrl = exports.responseFormat = exports.compileUrlByService = exports.compileService = exports.findServiceApi = exports.replaceParamsInUrl = void 0;
+var apisauce_1 = require("apisauce");
+var qs_1 = __importDefault(require("qs"));
 /**
- * @param url: string
- * @param params: Record<string
- * @param mixed string>
+ * Replaces placeholders in a URL with corresponding parameter values.
  *
- * @return string
+ * @param {string} url - The URL template containing placeholders in the format `{param}`.
+ * @param {Record<string, string>} params - An object where keys correspond to parameter names in the URL and values are the replacements.
+ * @returns {string} - The URL with all placeholders replaced by their corresponding parameters.
  */
-export function replaceParamsInUrl(url, params) {
+function replaceParamsInUrl(url, params) {
     return url.replace(/\{(\w+)\}/g, function (match, paramName) { return params[paramName]; });
 }
+exports.replaceParamsInUrl = replaceParamsInUrl;
 /**
- * @param services: ServiceApi[]
- * @param idToFind: string
+ * Finds a service by ID within a list of services.
  *
- * @return ServiceApi
+ * @param {ServiceApi[]} services - An array of service API objects.
+ * @param {string} idToFind - The ID of the service to find.
+ * @returns {ServiceApi | null} - The service object if found, otherwise null.
  */
-export function findServiceApi(services, idToFind) {
+function findServiceApi(services, idToFind) {
     var service = services.find(function (service) { return service.id === idToFind; });
     if (service) {
         return service;
@@ -72,12 +80,20 @@ export function findServiceApi(services, idToFind) {
         return null;
     }
 }
-export function compileService(idService, services) {
+exports.findServiceApi = findServiceApi;
+/**
+ * Compiles service information based on the service ID and an array of services.
+ *
+ * @param {ServiceUrlCompile} idService - The service identifier with parameters.
+ * @param {ServiceApi[]} services - The array of service configurations.
+ * @returns {CompiledServiceInfo | null} - An object containing the compiled service URL, method, version, and options, or null if the service is not found.
+ */
+function compileService(idService, services) {
     var _a, _b;
     var serviceExec = findServiceApi(services, idService.id);
     if (serviceExec) {
         return {
-            url: replaceParamsInUrl(serviceExec.url, (_a = idService.param) !== null && _a !== void 0 ? _a : {}),
+            url: replaceParamsInUrl(serviceExec.url, (_a = idService.params) !== null && _a !== void 0 ? _a : {}),
             methods: serviceExec.method,
             version: serviceExec.version,
             options: (_b = serviceExec.options) !== null && _b !== void 0 ? _b : {},
@@ -85,17 +101,33 @@ export function compileService(idService, services) {
     }
     return null;
 }
-export function compileUrlByService(configServices, idService, parameters, options) {
+exports.compileService = compileService;
+/**
+ * Compiles the full URL and request details for a given service.
+ *
+ * @param {DriverConfig} configServices - Configuration object containing baseURL and services.
+ * @param {ServiceUrlCompile} idService - The service identifier with parameters.
+ * @param {any} [payload] - Optional request payload.
+ * @param {object} [options] - Additional request options such as headers.
+ * @returns {CompileUrlResult | null} - The compiled URL information or null if the service is not found.
+ */
+function compileUrlByService(configServices, idService, payload, options) {
     var apiInfo = compileService(idService, configServices.services);
-    var payload = parameters !== null && parameters !== void 0 ? parameters : {};
     if (apiInfo != null) {
-        return compileUrl(configServices.baseURL + "/" + apiInfo.url, apiInfo.methods, payload, options);
+        return compileUrl(configServices.baseURL + "/" + apiInfo.url, apiInfo.methods, payload !== null && payload !== void 0 ? payload : {}, options);
     }
     console.error("Service ".concat(idService.id, " in driver not found"));
     return null;
 }
-export function responseFormat(_a) {
-    var status = _a.status, data = _a.data, headers = _a.headers, originalError = _a.originalError, _b = _a.duration, duration = _b === void 0 ? 0 : _b, _c = _a.problem, problem = _c === void 0 ? null : _c;
+exports.compileUrlByService = compileUrlByService;
+/**
+ * Formats a response object with standard details including status, data, and error information.
+ *
+ * @param {ResponseFormat<any | null>} response - An object containing response details such as status, data, headers, etc.
+ * @returns {ResponseFormat} - A formatted response object.
+ */
+function responseFormat(_a) {
+    var status = _a.status, data = _a.data, headers = _a.headers, originalError = _a.originalError, duration = _a.duration, problem = _a.problem;
     var ok = false;
     if (status >= 200 && status <= 299) {
         ok = true;
@@ -110,11 +142,21 @@ export function responseFormat(_a) {
         duration: duration,
     };
 }
-export function compileUrl(url, method, payload, options) {
+exports.responseFormat = responseFormat;
+/**
+ * Compiles a URL using a payload as query parameters if the method is GET.
+ *
+ * @param {string} url - The base URL.
+ * @param {MethodAPI} method - The HTTP method (e.g., GET, POST).
+ * @param {object} [payload] - Request payload to be sent.
+ * @param {object} [options] - Additional request options.
+ * @returns {CompileUrlResult} - An object containing the compiled URL, method, payload, options, and pathname.
+ */
+function compileUrl(url, method, payload, options) {
     var optionRequest = options !== null && options !== void 0 ? options : {};
     if (Object.keys(payload !== null && payload !== void 0 ? payload : {}).length > 0 && method === "get") {
         // compile query string
-        var queryString = QueryString.stringify(payload);
+        var queryString = qs_1.default.stringify(payload);
         // clear payload
         payload = {};
         // generate url
@@ -128,7 +170,18 @@ export function compileUrl(url, method, payload, options) {
         options: optionRequest,
     };
 }
-export function compileBodyFetchWithContextType(contextType, payload) {
+exports.compileUrl = compileUrl;
+/**
+ * Formats the payload based on the specified content type.
+ *
+ * Depending on the content type, the function converts the payload into a suitable
+ * format for HTTP transmission, such as a JSON string or FormData.
+ *
+ * @param {string} contextType - The content type of the request (e.g., "application/json", "multipart/form-data").
+ * @param {object} payload - The payload object to be formatted.
+ * @returns {string | FormData} - The formatted payload as a string for JSON, or as FormData for multipart data.
+ */
+function compileBodyFetchWithContextType(contextType, payload) {
     switch (contextType) {
         case "multipart/form-data":
             return objectToFormData(payload);
@@ -138,7 +191,16 @@ export function compileBodyFetchWithContextType(contextType, payload) {
             return JSON.stringify(payload);
     }
 }
-export function httpClientFetch(urlBuilder, parameters, options) {
+exports.compileBodyFetchWithContextType = compileBodyFetchWithContextType;
+/**
+ * Performs an HTTP fetch request using the given URL builder, payload, and options.
+ *
+ * @param {UrlBuilder} urlBuilder - An object defining URL and request method.
+ * @param {object} [payload] - The request payload.
+ * @param {object} [options] - Additional fetch options like headers.
+ * @returns {Promise<ResponseFormat>} - A promise resolving to the standardized response format.
+ */
+function httpClientFetch(urlBuilder, payload, options) {
     var _a, _b, _c, _d;
     return __awaiter(this, void 0, void 0, function () {
         var finalUrl, request, requestOptions, startFetchTime, res, endFetchTime, duration, resText, data, error_1, error_2;
@@ -146,7 +208,7 @@ export function httpClientFetch(urlBuilder, parameters, options) {
             switch (_e.label) {
                 case 0:
                     finalUrl = replaceParamsInUrl(urlBuilder.url, (_a = urlBuilder.param) !== null && _a !== void 0 ? _a : {});
-                    request = compileUrl(finalUrl, urlBuilder.method, parameters, options);
+                    request = compileUrl(finalUrl, urlBuilder.method, payload, options);
                     requestOptions = __assign({}, options);
                     if (!((_b = requestOptions.headers) === null || _b === void 0 ? void 0 : _b.hasOwnProperty("Content-Type"))) {
                         requestOptions.headers = __assign(__assign({}, requestOptions.headers), { "Content-Type": "application/json" });
@@ -218,7 +280,14 @@ export function httpClientFetch(urlBuilder, parameters, options) {
         });
     });
 }
-export function removeNullValues(obj) {
+exports.httpClientFetch = httpClientFetch;
+/**
+ * Removes null and undefined values from an object, recursively processing nested objects.
+ *
+ * @param {T} obj - The object to clean.
+ * @returns {T} - The cleaned object without null or undefined values.
+ */
+function removeNullValues(obj) {
     var result = {};
     for (var key in obj) {
         var value = obj[key];
@@ -234,6 +303,15 @@ export function removeNullValues(obj) {
     }
     return result;
 }
+exports.removeNullValues = removeNullValues;
+/**
+ * Converts an object payload to FormData, handling nested objects and arrays.
+ *
+ * @param {any} payload - The payload to convert to FormData.
+ * @param {FormData} [formData] - The FormData object to append to (default is a new FormData instance).
+ * @param {string | null} [parentKey] - The key of the parent object in a nested structure.
+ * @returns {FormData} - FormData populated with the payload data.
+ */
 function objectToFormData(payload, formData, parentKey) {
     if (formData === void 0) { formData = new FormData(); }
     if (parentKey === void 0) { parentKey = null; }
@@ -269,6 +347,6 @@ function objectToFormData(payload, formData, parentKey) {
     }
     return formData;
 }
-export var httpClientApiSauce = create({
+exports.httpClientApiSauce = (0, apisauce_1.create)({
     baseURL: "",
 });

@@ -2,7 +2,7 @@ import { httpJsonPlaceholderDriver } from "./api-clients";
 import { JsonPlaceholderPostServiceIds } from "./api-clients/jsonplaceholder-driver/post-services";
 
 const fetchListPost = async () => {
-  const response = await httpJsonPlaceholderDriver.execServiceByFetch({
+  const response = await httpJsonPlaceholderDriver.execService({
     id: JsonPlaceholderPostServiceIds.List,
   });
 
@@ -12,9 +12,9 @@ const fetchListPost = async () => {
 };
 
 const fetchPostDetail = async (id: number) => {
-  const response = await httpJsonPlaceholderDriver.execServiceByFetch({
+  const response = await httpJsonPlaceholderDriver.execService({
     id: JsonPlaceholderPostServiceIds.Detail,
-    param: { id: id },
+    params: { id: id },
   });
 
   if (response.status === 200) {

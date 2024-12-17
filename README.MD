@@ -90,18 +90,27 @@ export default TestDriver; // Export the driver configuration
 ```
 
 ### Build the HTTP Client:
+
 `DriverBuilder` is the crucial step for transforming your code configuration into a Promise-based HTTP client. It uniquely supports both `axios` and `fetch`, allowing for flexibility in handling HTTP requests. Furthermore, it provides distinct methods to customize and intercept requests and responses for each approach.
 
 ```typescript
 export const httpTestApi = new DriverBuilder()
-   .withBaseURL(TestDriver.baseURL)  // Set the base URL for all requests
-  .withServices(TestDriver.services)  // Register the services with defined endpoints
+  .withBaseURL(TestDriver.baseURL) // Set the base URL for all requests
+  .withServices(TestDriver.services) // Register the services with defined endpoints
   // Axios-specific transformations and interceptors
-  .withAddRequestTransformAxios((request) => {
+  .withAddRequestTransformAxios((req) => {
     // Apply custom transformations to Axios requests, if needed
+    // if (!req.headers) {
+    //   req.headers = {};
+    // }
+
+    // req.headers["Your-Header-Name"] = "YourHeaderValue";
+    // req.headers["Another-Header"] = "AnotherHeaderValue";
   })
-  .withAddTransformResponseAxios((response: any) => {
+  // Axios-specific transformations and interceptors
+  .withAddResponseTransformAxios((response) => {
     // Apply custom transformations to Axios responses, if needed
+    // response.data.newProp = "Add new prop";
   })
   // Fetch-specific transformations and interceptors
   .addRequestTransformFetch((url, requestOptions) => {

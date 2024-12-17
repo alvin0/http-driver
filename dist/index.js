@@ -85,18 +85,42 @@ var Driver = /** @class */ (function () {
         this.apiSauceInstance.axiosInstance.interceptors.response.use(undefined, this.config.handleInterceptorErrorAxios
             ? this.config.handleInterceptorErrorAxios(this.apiSauceInstance.axiosInstance, processQueue, isRefreshing)
             : interceptorError(this.apiSauceInstance.axiosInstance));
-        this.apiSauceInstance.addRequestTransform(function (request) {
-            // console.log("Start========LogAxiosRequest========Start",request, "End========LogAxiosRequest========End")
+        this.apiSauceInstance.addRequestTransform(function (transform) {
             if (_this.config.addRequestTransformAxios) {
-                _this.config.addRequestTransformAxios(request);
+                _this.config.addRequestTransformAxios(transform);
             }
         });
-        this.apiSauceInstance.addResponseTransform(function (response) {
-            // console.log("Start========LogAxiosResponse========Start",response, "End========LogAxiosResponse========End")
+        this.apiSauceInstance.addResponseTransform(function (transform) {
             if (_this.config.addTransformResponseAxios) {
-                _this.config.addTransformResponseAxios(response);
+                _this.config.addTransformResponseAxios(transform);
             }
         });
+        this.apiSauceInstance.addAsyncRequestTransform(function (transform) { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!this.config.addAsyncRequestTransformAxios) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.config.addAsyncRequestTransformAxios(transform)];
+                    case 1:
+                        _a.sent();
+                        _a.label = 2;
+                    case 2: return [2 /*return*/];
+                }
+            });
+        }); });
+        this.apiSauceInstance.addAsyncResponseTransform(function (transform) { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!this.config.addAsyncTransformResponseAxios) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.config.addAsyncTransformResponseAxios(transform)];
+                    case 1:
+                        _a.sent();
+                        _a.label = 2;
+                    case 2: return [2 /*return*/];
+                }
+            });
+        }); });
         return this;
     }
     Driver.prototype.appendExecService = function () {
@@ -308,11 +332,19 @@ var DriverBuilder = /** @class */ (function () {
         this.config.services = services;
         return this;
     };
+    DriverBuilder.prototype.withAddAsyncRequestTransformAxios = function (callback) {
+        this.config.addAsyncRequestTransform = callback;
+        return this;
+    };
+    DriverBuilder.prototype.withAddAsyncResponseTransformAxios = function (callback) {
+        this.config.addAsyncResponseTransform = callback;
+        return this;
+    };
     DriverBuilder.prototype.withAddRequestTransformAxios = function (callback) {
         this.config.addRequestTransformAxios = callback;
         return this;
     };
-    DriverBuilder.prototype.withAddTransformResponseAxios = function (callback) {
+    DriverBuilder.prototype.withAddResponseTransformAxios = function (callback) {
         this.config.addTransformResponseAxios = callback;
         return this;
     };

@@ -1,4 +1,5 @@
-import type { ApisauceInstance } from "apisauce";
+import type { ApiResponse, ApisauceInstance, AsyncRequestTransform, AsyncResponseTransform } from "apisauce";
+import { AxiosRequestConfig } from "axios";
 import type { ResponseFormat, ServiceApi, ServiceUrlCompile } from "./utils/driver-contracts";
 export interface DriverResponse {
     ok: boolean;
@@ -13,8 +14,10 @@ export declare class DriverBuilder {
     private config;
     withBaseURL(baseURL: string): this;
     withServices(services: ServiceApi[]): this;
-    withAddRequestTransformAxios(callback: (response: any) => void): this;
-    withAddTransformResponseAxios(callback: (response: any) => void): this;
+    withAddAsyncRequestTransformAxios(callback: (transform: AsyncRequestTransform) => void): this;
+    withAddAsyncResponseTransformAxios(callback: (transform: AsyncResponseTransform) => void): this;
+    withAddRequestTransformAxios(callback: (request: AxiosRequestConfig) => void): this;
+    withAddResponseTransformAxios(callback: (response: ApiResponse<any>) => void): this;
     withHandleInterceptorErrorAxios(callback: (axiosInstance: any, processQueue: (error: any, token: string | null) => void, isRefreshing: boolean) => (error: any) => Promise<any>): this;
     withAddTransformResponseFetch(callback: (response: ResponseFormat) => ResponseFormat): this;
     withAddRequestTransformFetch(callback: (url: string, requestOptions: {

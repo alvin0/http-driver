@@ -1,5 +1,11 @@
-import type { ApisauceInstance } from "apisauce";
+import type {
+  ApiResponse,
+  ApisauceInstance,
+  AsyncRequestTransform,
+  AsyncResponseTransform
+} from "apisauce";
 import { create } from "apisauce";
+import { AxiosRequestConfig } from "axios";
 import qs from "qs";
 import type {
   DriverConfig,
@@ -69,17 +75,27 @@ class Driver {
         : interceptorError(this.apiSauceInstance.axiosInstance)
     );
 
-    this.apiSauceInstance.addRequestTransform((request: any) => {
-      // console.log("Start========LogAxiosRequest========Start",request, "End========LogAxiosRequest========End")
+    this.apiSauceInstance.addRequestTransform((transform) => {
       if (this.config.addRequestTransformAxios) {
-        this.config.addRequestTransformAxios(request);
+        this.config.addRequestTransformAxios(transform);
       }
     });
 
-    this.apiSauceInstance.addResponseTransform((response: any) => {
-      // console.log("Start========LogAxiosResponse========Start",response, "End========LogAxiosResponse========End")
+    this.apiSauceInstance.addResponseTransform((transform) => {
       if (this.config.addTransformResponseAxios) {
-        this.config.addTransformResponseAxios(response);
+        this.config.addTransformResponseAxios(transform);
+      }
+    });
+
+    this.apiSauceInstance.addAsyncRequestTransform(async (transform) => {
+      if (this.config.addAsyncRequestTransformAxios) {
+        await this.config.addAsyncRequestTransformAxios(transform);
+      }
+    });
+
+    this.apiSauceInstance.addAsyncResponseTransform(async (transform) => {
+      if (this.config.addAsyncTransformResponseAxios) {
+        await this.config.addAsyncTransformResponseAxios(transform);
       }
     });
 
@@ -330,13 +346,33 @@ export class DriverBuilder {
     return this;
   }
 
-  withAddRequestTransformAxios(callback: (response: any) => void) {
+  withAddAsyncRequestTransformAxios(
+    callback: (transform: AsyncRequestTransform) => void
+  ) {
+    this.config.addAsyncRequestTransform = callback;
+
+    return this;
+  }
+
+  withAddAsyncResponseTransformAxios(
+    callback: (transform: AsyncResponseTransform) => void
+  ) {
+    this.config.addAsyncResponseTransform = callback;
+
+    return this;
+  }
+
+  withAddRequestTransformAxios(
+    callback: (request: AxiosRequestConfig) => void
+  ) {
     this.config.addRequestTransformAxios = callback;
 
     return this;
   }
 
-  withAddTransformResponseAxios(callback: (response: any) => void) {
+  withAddResponseTransformAxios(
+    callback: (response: ApiResponse<any>) => void
+  ) {
     this.config.addTransformResponseAxios = callback;
 
     return this;

@@ -1,4 +1,4 @@
-import type { HEADERS, PROBLEM_CODE } from "apisauce";
+import type { ApiResponse, AsyncRequestTransform, AsyncResponseTransform, HEADERS, PROBLEM_CODE } from "apisauce";
 import { AxiosError, AxiosRequestConfig } from "axios";
 export enum MethodAPI {
   get = "get",
@@ -35,8 +35,10 @@ export interface DriverConfig {
   baseURL: string;
   services: ServiceApi[];
   withCredentials?: boolean;
-  addRequestTransformAxios?: (callback: (response: any) => void) => void;
-  addTransformResponseAxios?: (callback: (response: any) => void) => void;
+  addRequestTransformAxios?: (request: AxiosRequestConfig) => void;
+  addTransformResponseAxios?: (response: ApiResponse<any>) => void;
+  addAsyncRequestTransform?: (transform: AsyncRequestTransform) => void;
+  addAsyncResponseTransform?: (transform: AsyncResponseTransform) => void;
   handleInterceptorErrorAxios?: (
     axiosInstance: any,
     processQueue: (error: any, token: string | null) => void,

@@ -1,7 +1,7 @@
 import {
   DriverInformation,
   ServiceApi,
-} from "../../../src/utils/driver-contracts";
+} from "../../../../src/utils/driver-contracts";
 import PostService from "./post-services";
 
 const baseURL: string = "https://jsonplaceholder.typicode.com";

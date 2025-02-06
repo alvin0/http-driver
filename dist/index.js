@@ -10,6 +10,29 @@ var __assign = (this && this.__assign) || function () {
     };
     return __assign.apply(this, arguments);
 };
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -46,13 +69,12 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DriverBuilder = void 0;
 var apisauce_1 = require("apisauce");
-var qs_1 = __importDefault(require("qs"));
+var qs = __importStar(require("qs"));
+var custom_errors_1 = require("./utils/custom-errors");
+var error_handler_1 = require("./utils/error-handler");
 var index_1 = require("./utils/index");
 var Driver = /** @class */ (function () {
     function Driver(config) {
@@ -126,37 +148,16 @@ var Driver = /** @class */ (function () {
     Driver.prototype.appendExecService = function () {
         var _this = this;
         var httpProAskDriver = Object.assign(this.apiSauceInstance, {
-            /**
-             * Executes a service call based on the service configuration.
-             *
-             * This function resolves the URL and method details of a service by
-             * calling `compileUrlByService` and then executes the service call
-             * using these details. If the service cannot be found, it returns
-             * an error response using `responseFormat`.
-             *
-             * @param idService - An object containing the service ID and other relevant identifying information.
-             * @param payload - Optional data to be passed with the service request. Can be in any format as required by the specific service.
-             * @param options - Additional request options, such as headers, that may be needed for the request.
-             *
-             * @returns A promise that resolves to the result of the service call. This will return a formatted response if the service cannot be found, or the promise returned by executing the service call.
-             */
             execService: function (idService, payload, options) { return __awaiter(_this, void 0, void 0, function () {
-                var apiInfo, payloadConvert, contentType;
+                var apiInfo, payloadConvert, contentType, result, error_1;
                 var _a;
                 return __generator(this, function (_b) {
                     switch (_b.label) {
                         case 0:
+                            _b.trys.push([0, 2, , 3]);
                             apiInfo = (0, index_1.compileUrlByService)(this.config, idService, payload, options);
                             if (apiInfo == null) {
-                                return [2 /*return*/, (0, index_1.responseFormat)({
-                                        ok: false,
-                                        duration: 0,
-                                        status: 500,
-                                        headers: null,
-                                        data: null,
-                                        problem: "Service ".concat(idService.id, " in driver not found"),
-                                        originalError: "Service ".concat(idService.id, " in driver not found"),
-                                    })];
+                                throw new Error("Service ".concat(idService.id, " in driver not found"));
                             }
                             payloadConvert = apiInfo.payload;
                             if (apiInfo.options.headers &&
@@ -169,46 +170,41 @@ var Driver = /** @class */ (function () {
                                 }
                             }
                             return [4 /*yield*/, this.apiSauceInstance[apiInfo.method](apiInfo.pathname, payloadConvert, apiInfo.options)];
-                        case 1: return [2 /*return*/, (_b.sent())];
+                        case 1:
+                            result = _b.sent();
+                            if (!result) {
+                                throw new Error("No response from service call");
+                            }
+                            return [2 /*return*/, result];
+                        case 2:
+                            error_1 = _b.sent();
+                            if (error_1 instanceof Error) {
+                                if (error_1.message.toLowerCase().includes('timeout')) {
+                                    return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new custom_errors_1.TimeoutError()))];
+                                }
+                                if (error_1.message.toLowerCase().includes('network')) {
+                                    return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new custom_errors_1.NetworkError()))];
+                                }
+                            }
+                            return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(error_1))];
+                        case 3: return [2 /*return*/];
                     }
                 });
             }); },
-            /**
-             * Executes a service call using the Fetch API based on service configuration.
-             *
-             * This function constructs the service URL and options by calling `compileUrlByService`
-             * and then performs the service call using Fetch. It handles both success and error cases,
-             * providing a standardized response format.
-             *
-             * @param idService - An object containing the service ID and other relevant identifying information.
-             * @param payload - Optional data to be sent with the request. This data is formatted according to the request's content type.
-             * @param options - Additional options for the request, such as custom headers.
-             *
-             * @returns A promise that resolves to the response of the fetch call. If the fetch operation fails, the promise resolves to an error response formatted by `responseFormat`.
-             */
             execServiceByFetch: function (idService, payload, options) { return __awaiter(_this, void 0, void 0, function () {
-                var apiInfo, url, requestOptions, startFetchTime, res, endFetchTime, duration, resText, data, error_1, response, error_2;
+                var apiInfo, url, requestOptions, startFetchTime, res, endFetchTime, duration, resText, data, response, error_2;
                 var _a;
                 var _b, _c, _d;
                 return __generator(this, function (_e) {
                     switch (_e.label) {
                         case 0:
+                            _e.trys.push([0, 3, , 4]);
                             apiInfo = (0, index_1.compileUrlByService)(this.config, idService, payload, options);
                             if (apiInfo == null) {
-                                return [2 /*return*/, (0, index_1.responseFormat)({
-                                        ok: false,
-                                        duration: 0,
-                                        status: 500,
-                                        headers: null,
-                                        data: null,
-                                        problem: "Service ".concat(idService.id, " in driver not found"),
-                                        originalError: "Service ".concat(idService.id, " in driver not found"),
-                                    })];
+                                throw new Error("Service ".concat(idService.id, " in driver not found"));
                             }
-                            _e.label = 1;
-                        case 1:
-                            _e.trys.push([1, 7, , 8]);
                             url = apiInfo.url;
+                            url = this.config.baseURL + "/" + url;
                             requestOptions = __assign({}, apiInfo.options);
                             if (!((_b = requestOptions.headers) === null || _b === void 0 ? void 0 : _b.hasOwnProperty("Content-Type"))) {
                                 requestOptions.headers = __assign(__assign({}, requestOptions.headers), { "Content-Type": "application/json" });
@@ -226,26 +222,24 @@ var Driver = /** @class */ (function () {
                             }
                             startFetchTime = performance.now();
                             return [4 /*yield*/, fetch(url, requestOptions)];
-                        case 2:
+                        case 1:
                             res = _e.sent();
                             endFetchTime = performance.now();
                             duration = parseFloat((endFetchTime - startFetchTime).toFixed(2));
                             resText = null;
                             data = null;
-                            _e.label = 3;
-                        case 3:
-                            _e.trys.push([3, 5, , 6]);
                             return [4 /*yield*/, res.text()];
-                        case 4:
+                        case 2:
                             resText = _e.sent();
-                            data =
-                                JSON.parse(resText) == undefined ? resText : JSON.parse(resText);
-                            return [3 /*break*/, 6];
-                        case 5:
-                            error_1 = _e.sent();
-                            data = resText;
-                            return [3 /*break*/, 6];
-                        case 6:
+                            if (!resText) {
+                                throw new custom_errors_1.MalformedResponseError("Malformed response");
+                            }
+                            try {
+                                data = JSON.parse(resText);
+                            }
+                            catch (err) {
+                                throw new custom_errors_1.MalformedResponseError("Malformed response");
+                            }
                             response = (0, index_1.responseFormat)({
                                 ok: res.ok,
                                 duration: duration,
@@ -258,44 +252,31 @@ var Driver = /** @class */ (function () {
                             return [2 /*return*/, this.config.addTransformResponseFetch
                                     ? this.config.addTransformResponseFetch(response)
                                     : response];
-                        case 7:
+                        case 3:
                             error_2 = _e.sent();
-                            return [2 /*return*/, (0, index_1.responseFormat)({
-                                    ok: false,
-                                    duration: 0,
-                                    originalError: "".concat(error_2),
-                                    problem: "Error fetching data ".concat(error_2),
-                                    data: null,
-                                    status: 500,
-                                })];
-                        case 8: return [2 /*return*/];
+                            if (error_2 instanceof custom_errors_1.MalformedResponseError) {
+                                return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(error_2))];
+                            }
+                            if (error_2 instanceof Error) {
+                                if (error_2.message.toLowerCase().includes('timeout')) {
+                                    return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new custom_errors_1.TimeoutError()))];
+                                }
+                                if (error_2.message.toLowerCase().includes('network')) {
+                                    return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new custom_errors_1.NetworkError()))];
+                                }
+                            }
+                            return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(error_2))];
+                        case 4: return [2 /*return*/];
                     }
                 });
             }); },
-            /**
-             * Retrieves the full URL and request details for a specified service.
-             *
-             * This function constructs the full URL and other pertinent information
-             * for a given service by utilizing the service configuration. If the
-             * service method is 'GET' and payload data is provided, it appends the
-             * payload as query parameters to the URL.
-             *
-             * @param {ServiceUrlCompile} idService - An object containing the service ID and other relevant identifying information.
-             * @param {any} [payload] - Optional data to be converted into query parameters if the service method is 'GET'.
-             *
-             * @returns {object} - An object containing the following properties:
-             *  - `fullUrl`: The complete URL including the base URL and service-specific path.
-             *  - `pathname`: The service-specific path of the URL.
-             *  - `method`: The HTTP method (e.g., 'GET', 'POST') associated with the service.
-             *  - `payload`: The payload object (may be modified to include query parameters).
-             *  - If the service cannot be found, returns an object with `fullUrl`, `method`, `url`, and `payload` set to `null`.
-             */
             getInfoURL: function (idService, payload) {
+                if (payload === void 0) { payload = {}; }
                 var apiInfo = (0, index_1.compileService)(idService, _this.config.services);
                 if (apiInfo != null) {
-                    if (Object.keys(payload).length > 0 && apiInfo.methods === "get") {
-                        var queryString = qs_1.default.stringify(payload);
-                        payload = {};
+                    if (payload && Object.keys(payload).length > 0 && apiInfo.methods === "get") {
+                        var queryString = qs.stringify(payload);
+                        payload = null;
                         apiInfo.url = apiInfo.url + "?" + queryString;
                     }
                     return {

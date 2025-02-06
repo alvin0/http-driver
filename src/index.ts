@@ -6,13 +6,15 @@ import type {
 } from "apisauce";
 import { create } from "apisauce";
 import { AxiosRequestConfig } from "axios";
-import qs from "qs";
+import * as qs from "qs";
+import { MalformedResponseError, NetworkError, TimeoutError } from "./utils/custom-errors";
 import type {
   DriverConfig,
   ResponseFormat,
   ServiceApi,
   ServiceUrlCompile,
 } from "./utils/driver-contracts";
+import { handleErrorResponse } from "./utils/error-handler";
 import {
   compileBodyFetchWithContextType,
   compileService,
@@ -104,103 +106,80 @@ class Driver {
 
   appendExecService() {
     const httpProAskDriver = Object.assign(this.apiSauceInstance, {
-      /**
-       * Executes a service call based on the service configuration.
-       *
-       * This function resolves the URL and method details of a service by
-       * calling `compileUrlByService` and then executes the service call
-       * using these details. If the service cannot be found, it returns
-       * an error response using `responseFormat`.
-       *
-       * @param idService - An object containing the service ID and other relevant identifying information.
-       * @param payload - Optional data to be passed with the service request. Can be in any format as required by the specific service.
-       * @param options - Additional request options, such as headers, that may be needed for the request.
-       *
-       * @returns A promise that resolves to the result of the service call. This will return a formatted response if the service cannot be found, or the promise returned by executing the service call.
-       */
       execService: async (
         idService: ServiceUrlCompile,
         payload?: any,
         options?: { [key: string]: any }
       ): Promise<ResponseFormat> => {
-        const apiInfo = compileUrlByService(
-          this.config,
-          idService,
-          payload,
-          options
-        );
+        try {
+          const apiInfo = compileUrlByService(
+            this.config,
+            idService,
+            payload,
+            options
+          );
 
-        if (apiInfo == null) {
-          return responseFormat({
-            ok: false,
-            duration: 0,
-            status: 500,
-            headers: null,
-            data: null,
-            problem: `Service ${idService.id} in driver not found`,
-            originalError: `Service ${idService.id} in driver not found`,
-          });
-        }
-
-        let payloadConvert: any = apiInfo.payload;
-
-        if (
-          apiInfo.options.headers &&
-          typeof apiInfo.options.headers === "object" &&
-          apiInfo.options.headers?.hasOwnProperty("Content-Type")
-        ) {
-          const contentType = (apiInfo.options.headers as any)["Content-Type"];
-          if (contentType.toLowerCase() === "multipart/form-data") {
-            // delete apiInfo.options.headers;
-            // payloadConvert = compileBodyFetchWithContextType(contentType.toLowerCase(), apiInfo.payload)
+          if (apiInfo == null) {
+            throw new Error(`Service ${idService.id} in driver not found`);
           }
-        }
 
-        return (await this.apiSauceInstance[apiInfo.method](
-          apiInfo.pathname,
-          payloadConvert,
-          apiInfo.options
-        )) as ResponseFormat;
+          let payloadConvert: any = apiInfo.payload;
+
+          if (
+            apiInfo.options.headers &&
+            typeof apiInfo.options.headers === "object" &&
+            apiInfo.options.headers?.hasOwnProperty("Content-Type")
+          ) {
+            const contentType = (apiInfo.options.headers as any)["Content-Type"];
+            if (contentType.toLowerCase() === "multipart/form-data") {
+              // delete apiInfo.options.headers;
+              // payloadConvert = compileBodyFetchWithContextType(contentType.toLowerCase(), apiInfo.payload)
+            }
+          }
+
+          const result = await this.apiSauceInstance[apiInfo.method](
+            apiInfo.pathname,
+            payloadConvert,
+            apiInfo.options
+          );
+          
+          if (!result) {
+            throw new Error("No response from service call");
+          }
+
+          return result as ResponseFormat;
+        } catch (error) {
+          if (error instanceof Error) {
+            if (error.message.toLowerCase().includes('timeout')) {
+              return responseFormat(handleErrorResponse(new TimeoutError()));
+            }
+            if (error.message.toLowerCase().includes('network')) {
+              return responseFormat(handleErrorResponse(new NetworkError()));
+            }
+          }
+          return responseFormat(handleErrorResponse(error));
+        }
       },
-      /**
-       * Executes a service call using the Fetch API based on service configuration.
-       *
-       * This function constructs the service URL and options by calling `compileUrlByService`
-       * and then performs the service call using Fetch. It handles both success and error cases,
-       * providing a standardized response format.
-       *
-       * @param idService - An object containing the service ID and other relevant identifying information.
-       * @param payload - Optional data to be sent with the request. This data is formatted according to the request's content type.
-       * @param options - Additional options for the request, such as custom headers.
-       *
-       * @returns A promise that resolves to the response of the fetch call. If the fetch operation fails, the promise resolves to an error response formatted by `responseFormat`.
-       */
+
       execServiceByFetch: async (
         idService: ServiceUrlCompile,
         payload?: any,
         options?: { [key: string]: any }
       ): Promise<ResponseFormat> => {
-        const apiInfo = compileUrlByService(
-          this.config,
-          idService,
-          payload,
-          options
-        );
-
-        if (apiInfo == null) {
-          return responseFormat({
-            ok: false,
-            duration: 0,
-            status: 500,
-            headers: null,
-            data: null,
-            problem: `Service ${idService.id} in driver not found`,
-            originalError: `Service ${idService.id} in driver not found`,
-          });
-        }
-
         try {
+          const apiInfo = compileUrlByService(
+            this.config,
+            idService,
+            payload,
+            options
+          );
+
+          if (apiInfo == null) {
+            throw new Error(`Service ${idService.id} in driver not found`);
+          }
+
           let url: string = apiInfo.url;
+          url = this.config.baseURL + "/" + url;
           let requestOptions = {
             ...apiInfo.options,
           } as {
@@ -246,16 +225,19 @@ class Driver {
           const duration = parseFloat(
             (endFetchTime - startFetchTime).toFixed(2)
           );
+          
           let resText: string | null = null;
-          let data: string | null = null;
+          let data: any = null;
 
-          try {
-            resText = await res.text();
-            data =
-              JSON.parse(resText) == undefined ? resText : JSON.parse(resText);
-          } catch (error) {
-            data = resText;
+          resText = await res.text();
+          if (!resText) {
+            throw new MalformedResponseError("Malformed response");
           }
+          try {
+            data = JSON.parse(resText);
+            } catch (err) {
+              throw new MalformedResponseError("Malformed response");
+            }
 
           const response = responseFormat({
             ok: res.ok,
@@ -271,41 +253,31 @@ class Driver {
             ? this.config.addTransformResponseFetch(response)
             : response;
         } catch (error) {
-          return responseFormat({
-            ok: false,
-            duration: 0,
-            originalError: `${error}`,
-            problem: `Error fetching data ${error}`,
-            data: null,
-            status: 500,
-          });
+          if (error instanceof MalformedResponseError) {
+            return responseFormat(handleErrorResponse(error));
+          }
+
+          if (error instanceof Error) {
+            if (error.message.toLowerCase().includes('timeout')) {
+              return responseFormat(handleErrorResponse(new TimeoutError()));
+            }
+            
+            if (error.message.toLowerCase().includes('network')) {
+              return responseFormat(handleErrorResponse(new NetworkError()));
+            }
+          }
+
+          return responseFormat(handleErrorResponse(error));
         }
       },
-      /**
-       * Retrieves the full URL and request details for a specified service.
-       *
-       * This function constructs the full URL and other pertinent information
-       * for a given service by utilizing the service configuration. If the
-       * service method is 'GET' and payload data is provided, it appends the
-       * payload as query parameters to the URL.
-       *
-       * @param {ServiceUrlCompile} idService - An object containing the service ID and other relevant identifying information.
-       * @param {any} [payload] - Optional data to be converted into query parameters if the service method is 'GET'.
-       *
-       * @returns {object} - An object containing the following properties:
-       *  - `fullUrl`: The complete URL including the base URL and service-specific path.
-       *  - `pathname`: The service-specific path of the URL.
-       *  - `method`: The HTTP method (e.g., 'GET', 'POST') associated with the service.
-       *  - `payload`: The payload object (may be modified to include query parameters).
-       *  - If the service cannot be found, returns an object with `fullUrl`, `method`, `url`, and `payload` set to `null`.
-       */
-      getInfoURL: (idService: ServiceUrlCompile, payload?: any) => {
+
+      getInfoURL: (idService: ServiceUrlCompile, payload: any = {}) => {
         const apiInfo = compileService(idService, this.config.services);
 
         if (apiInfo != null) {
-          if (Object.keys(payload).length > 0 && apiInfo.methods === "get") {
+          if (payload && Object.keys(payload).length > 0 && apiInfo.methods === "get") {
             const queryString = qs.stringify(payload);
-            payload = {};
+            payload = null;
             apiInfo.url = apiInfo.url + "?" + queryString;
           }
 

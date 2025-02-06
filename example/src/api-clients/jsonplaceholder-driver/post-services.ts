@@ -1,4 +1,4 @@
-import { MethodAPI, ServiceApi } from "../../../src/utils/driver-contracts";
+import { MethodAPI, ServiceApi } from "../../../../src/utils/driver-contracts";
 
 export enum JsonPlaceholderPostServiceIds {
   List = "jsonplaceholder.post.list",
@@ -34,5 +34,10 @@ export default [
     id: JsonPlaceholderPostServiceIds.Destroy,
     url: "posts/{id}",
     method: MethodAPI.delete,
+  },
+  {
+    id: JsonPlaceholderPostServiceIds.Restore,
+    url: "posts/{id}",
+    method: MethodAPI.patch,
   },
 ] as ServiceApi[];

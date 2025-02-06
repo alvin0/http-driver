@@ -1,5 +1,5 @@
 import { create } from "apisauce";
-import QueryString from "qs";
+import * as qs from "qs";
 import type {
   CompiledServiceInfo,
   CompileUrlResult,
@@ -153,7 +153,7 @@ export function compileUrl(
 
   if (Object.keys(payload ?? {}).length > 0 && method === "get") {
     // compile query string
-    const queryString = QueryString.stringify(payload);
+    const queryString = qs.stringify(payload);
     // clear payload
     payload = {};
     // generate url
@@ -250,7 +250,8 @@ export async function httpClientFetch(
 
     try {
       resText = await res.text();
-      data = JSON.parse(resText) == undefined ? resText : JSON.parse(resText);
+      data =
+        JSON.parse(resText) == undefined ? resText : JSON.parse(resText);
     } catch (error) {
       data = resText;
     }
@@ -332,7 +333,6 @@ function objectToFormData(
   for (const key in payload) {
     if (payload.hasOwnProperty(key)) {
       const value = payload[key];
-
       const formKey = parentKey ? `${parentKey}.${key}` : key;
 
       if (Array.isArray(value)) {
@@ -356,5 +356,5 @@ function objectToFormData(
 }
 
 export const httpClientApiSauce = create({
-  baseURL: "",
+  baseURL: ""
 });

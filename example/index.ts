@@ -1,23 +1,23 @@
-import { httpJsonPlaceholderDriver } from "./api-clients";
-import { JsonPlaceholderPostServiceIds } from "./api-clients/jsonplaceholder-driver/post-services";
+import { DummyJSONApi } from "./src/app/api-dummpyjson";
+import { JsonPlaceholderApi } from "./src/app/api-jsonplaceholder";
 
-const fetchListPost = async () => {
-  const response = await httpJsonPlaceholderDriver.execService({
-    id: JsonPlaceholderPostServiceIds.List,
-  });
+/**
+ * Main function to call both APIs sequentially
+ */
+async function main() {
+  // Initialize API instances
+  const dummyApi = new DummyJSONApi();
+  const jsonPlaceholderApi = new JsonPlaceholderApi();
 
-  if (response.status === 200) {
-    return response.data;
-  }
-};
+  console.log("Starting DummyJSON API calls...");
+  await dummyApi.dummyJSONCaller();
 
-const fetchPostDetail = async (id: number) => {
-  const response = await httpJsonPlaceholderDriver.execService({
-    id: JsonPlaceholderPostServiceIds.Detail,
-    params: { id: id },
-  });
+  console.log("\nStarting JSONPlaceholder API calls...");
+  await jsonPlaceholderApi.jsonPlaceholderCaller();
+}
 
-  if (response.status === 200) {
-    return response.data;
-  }
-};
+// Run the main function and catch any errors
+main().catch((error) => {
+  console.error("Error in main:", error);
+  process.exit(1);
+});

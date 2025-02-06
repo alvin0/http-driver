@@ -10,6 +10,29 @@ var __assign = (this && this.__assign) || function () {
     };
     return __assign.apply(this, arguments);
 };
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -46,13 +69,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.httpClientApiSauce = exports.removeNullValues = exports.httpClientFetch = exports.compileBodyFetchWithContextType = exports.compileUrl = exports.responseFormat = exports.compileUrlByService = exports.compileService = exports.findServiceApi = exports.replaceParamsInUrl = void 0;
 var apisauce_1 = require("apisauce");
-var qs_1 = __importDefault(require("qs"));
+var qs = __importStar(require("qs"));
 /**
  * Replaces placeholders in a URL with corresponding parameter values.
  *
@@ -156,7 +176,7 @@ function compileUrl(url, method, payload, options) {
     var optionRequest = options !== null && options !== void 0 ? options : {};
     if (Object.keys(payload !== null && payload !== void 0 ? payload : {}).length > 0 && method === "get") {
         // compile query string
-        var queryString = qs_1.default.stringify(payload);
+        var queryString = qs.stringify(payload);
         // clear payload
         payload = {};
         // generate url
@@ -238,7 +258,8 @@ function httpClientFetch(urlBuilder, payload, options) {
                     return [4 /*yield*/, res.text()];
                 case 4:
                     resText = _e.sent();
-                    data = JSON.parse(resText) == undefined ? resText : JSON.parse(resText);
+                    data =
+                        JSON.parse(resText) == undefined ? resText : JSON.parse(resText);
                     return [3 /*break*/, 6];
                 case 5:
                     error_1 = _e.sent();
@@ -348,5 +369,5 @@ function objectToFormData(payload, formData, parentKey) {
     return formData;
 }
 exports.httpClientApiSauce = (0, apisauce_1.create)({
-    baseURL: "",
+    baseURL: ""
 });

@@ -23,9 +23,8 @@ At its core, HttpDriver features:
 ```mermaid
 graph TD;
     A[Service Definitions] --> B[Driver Configuration];
-    B --> C[Driver];
-    C --> D[DriverBuilder];
-    D --> E[HTTP Client];
+    B --> C[DriverBuilder];
+    C --> D[Driver HTTP Client ];
 ```
 
 ## How HttpDriver Works
@@ -272,47 +271,6 @@ const fetchPostDetail = async (id: number) => {
   }
 };
 ```
-
-## Testing
-
-### Running Tests Locally
-
-```bash
-# Run tests with coverage
-npm test
-
-# Run tests without coverage
-npm test -- --no-coverage
-```
-
-Current test coverage:
-- Statements: 90.62%
-- Branches: 73.17%
-- Functions: 90.62%
-- Lines: 90.17%
-
-The test suite includes:
-- Unit tests for core functionality
-- Error handling scenarios
-- Network request mocking
-- Edge cases and error conditions
-
-### Running GitHub Actions Locally
-
-To test the GitHub Actions workflow locally, you can use [act](https://github.com/nektos/act):
-
-1. Install act:
-```bash
-# For Windows (requires Docker)
-choco install act-cli
-```
-
-2. Run the workflow:
-```bash
-act -j test
-```
-
-This will execute the same test workflow that runs in GitHub Actions.
 
 ## Author
 

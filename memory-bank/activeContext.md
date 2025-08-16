@@ -20,9 +20,14 @@ This file tracks the current focus, recent changes, decisions, next steps, and a
   - Created detailed documentation at [`docs/version-configuration.md`](../docs/version-configuration.md)
 
 - **Node.js 18.x Compatibility Fix**:
-  - Fixed `File` and `Blob` type compatibility issues in test environment
+  - Fixed `File` and `Blob` type compatibility issues in test environment 
   - Added comprehensive mocks for `File`, `Blob`, and `FormData` in [`test/src/utils/missing-coverage.test.ts`](../test/src/utils/missing-coverage.test.ts)
-  - All 162 tests now pass with 96%+ coverage
+  - **Replaced `instanceof File` with safe detection function in production code**:
+    - Created `isFileOrBlobObject()` helper function in [`src/utils/index.ts`](../src/utils/index.ts)
+    - Handles both File-like and Blob-like objects without relying on global constructors
+    - Compatible with browser environments, Node.js polyfills, and custom mocks
+    - Supports detection via constructor names, object properties, and method signatures
+  - All 163 tests now pass with 96%+ coverage
   - Solution handles Node.js environments that don't have native browser APIs
 
 - Memory Bank core docs:

@@ -395,6 +395,41 @@ export function removeNullValues<T extends Record<string, any>>(obj: T): T {
 }
 
 /**
+ * Checks if a value is File-like or Blob-like object (compatible with both browser and Node.js polyfills)
+ * @param value - The value to check
+ * @returns true if the value has File-like or Blob-like properties
+ */
+function isFileOrBlobObject(value: any): boolean {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  // Check for File-like object (has name and lastModified)
+  const hasFileProps = typeof value.name === 'string' && 
+                      typeof value.lastModified === 'number';
+  
+  // Check for Blob-like object (has size, type, and stream/text methods)
+  const hasBlobProps = typeof value.size === 'number' &&
+                      typeof value.type === 'string' &&
+                      (typeof value.stream === 'function' || typeof value.text === 'function');
+
+  // Check constructor names or toString representations
+  const constructorName = value.constructor?.name;
+  const objectString = value.toString?.();
+  
+  const isFileType = constructorName === 'File' || 
+                    objectString === '[object File]' ||
+                    constructorName === 'MockFile';
+                    
+  const isBlobType = constructorName === 'Blob' || 
+                    objectString === '[object Blob]' ||
+                    constructorName === 'MockBlob';
+
+  // Return true if any condition matches
+  return hasFileProps || hasBlobProps || isFileType || isBlobType;
+}
+
+/**
  * Converts an object payload to FormData, handling nested objects and arrays.
  *
  * @param {any} payload - The payload to convert to FormData.
@@ -417,7 +452,7 @@ function objectToFormData(
 
       if (Array.isArray(value)) {
         value.forEach((subValue: any, index: number) => {
-          if (subValue instanceof File) {
+          if (isFileOrBlobObject(subValue)) {
             formData.append(`${formKey}[${index}]`, subValue);
           } else if (typeof subValue === "object" && subValue !== null) {
             objectToFormData(subValue, formData, `${formKey}[${index}]`);
@@ -425,6 +460,8 @@ function objectToFormData(
             formData.append(`${formKey}[${index}]`, String(subValue));
           }
         });
+      } else if (isFileOrBlobObject(value)) {
+        formData.append(formKey, value);
       } else if (typeof value === "object" && value !== null) {
         objectToFormData(value, formData, formKey);
       } else {

@@ -330,6 +330,59 @@ describe("Missing coverage test cases", () => {
     expect(formData.get("name")).toBe("test");
   });
 
+  test("should handle Blob objects in FormData", async () => {
+    // Mock a successful response
+    const fakeResponse = {
+      ok: true,
+      status: 200,
+      headers: new Headers({ "Content-Type": "application/json" }),
+      text: async () => JSON.stringify({ success: true })
+    };
+    
+    // Spy on fetch to capture the request options
+    const fetchSpy = jest.fn().mockResolvedValue(fakeResponse as any);
+    globalThis.fetch = fetchSpy;
+
+    const urlBuilder = {
+      url: "http://example.com/upload",
+      method: MethodAPI.post,
+      param: {}
+    };
+
+    // Create Blob objects to test Blob handling
+    const blob1 = new Blob(["blob content 1"], { type: "text/plain" });
+    const blob2 = new Blob(["blob content 2"], { type: "application/octet-stream" });
+
+    const payload = {
+      blobs: [blob1, blob2], // Test Blob objects in arrays
+      singleBlob: blob1, // Test single Blob object
+      name: "test"
+    };
+
+    const options = {
+      headers: {
+        "Content-Type": "multipart/form-data"
+      }
+    };
+
+    const response = await httpClientFetch(urlBuilder, payload, options);
+
+    expect(response.ok).toBe(true);
+    expect(globalThis.fetch).toHaveBeenCalled();
+    
+    const callArgs = (globalThis.fetch as jest.Mock).mock.calls[0];
+    const requestOptions = callArgs[1];
+    
+    // Verify that the body is FormData and contains the blobs
+    expect(requestOptions.body).toBeInstanceOf(FormData);
+    
+    const formData = requestOptions.body as FormData;
+    expect(formData.get("blobs[0]")).toBe(blob1);
+    expect(formData.get("blobs[1]")).toBe(blob2);
+    expect(formData.has("singleBlob")).toBe(true); // Just check if it exists, not exact reference
+    expect(formData.get("name")).toBe("test");
+  });
+
   test("should handle when headers Content-Type access returns undefined (line 296)", async () => {
     const fakeResponse = {
       ok: true,

@@ -418,7 +418,7 @@ var Driver = /** @class */ (function () {
                         fullUrl = (0, index_1.buildUrlWithVersion)(_this.config.baseURL, apiInfo.url, version, _this.config.versionConfig);
                     }
                     else {
-                        // Use simple baseURL + endpoint concatenation
+                        // Use simple baseURL + endpoint concatenation (ignore any service versions)
                         fullUrl = "".concat(_this.config.baseURL, "/").concat(apiInfo.url);
                     }
                     if (payload && Object.keys(payload).length > 0 && apiInfo.methods === driver_1.MethodAPI.get) {

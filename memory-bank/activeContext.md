@@ -9,7 +9,17 @@ This file tracks the current focus, recent changes, decisions, next steps, and a
 - Prepare a concise set of fixes improving correctness and API parity between Axios and Fetch flows
 
 ## Recent Changes
-- **Version Configuration System (NEW)**:
+- **Version Ignore Fix (COMPLETED)**:
+  - Fixed issue where service-specific versions were not properly ignored when versioning was disabled
+  - Updated both `getInfoURL()` and `compileUrlByService()` to completely ignore service versions when `versionConfig.enabled` is false
+  - Added clarifying comments: "ignore any service versions" when versioning is disabled
+  - Verified fix with comprehensive testing showing:
+    - Service `{ version: 1 }` without `.enableVersioning()` → URL: `baseURL/endpoint` (version ignored ✅)
+    - Same service with `.enableVersioning()` → URL: `baseURL/v1/endpoint` (version used ✅) 
+    - Service + global versions both ignored when versioning disabled ✅
+  - All 172 tests pass with 98.14% statement coverage
+
+- **Version Configuration System (COMPLETED)**:
   - Added `VersionConfig` interface in [`src/types/driver.ts`](../src/types/driver.ts)
   - Implemented `buildUrlWithVersion()` utility function in [`src/utils/index.ts`](../src/utils/index.ts)
   - Updated `compileUrlByService()` to use version injection logic

@@ -193,7 +193,7 @@ function compileUrlByService(configServices, idService, payload, options) {
             finalUrl = buildUrlWithVersion(configServices.baseURL, apiInfo.url, version, configServices.versionConfig);
         }
         else {
-            // Use simple baseURL + endpoint concatenation
+            // Use simple baseURL + endpoint concatenation (ignore any service versions)
             finalUrl = "".concat(configServices.baseURL, "/").concat(apiInfo.url);
         }
         return compileUrl(finalUrl, apiInfo.methods, payload !== null && payload !== void 0 ? payload : {}, options);
@@ -388,6 +388,35 @@ function removeNullValues(obj) {
 }
 exports.removeNullValues = removeNullValues;
 /**
+ * Checks if a value is File-like or Blob-like object (compatible with both browser and Node.js polyfills)
+ * @param value - The value to check
+ * @returns true if the value has File-like or Blob-like properties
+ */
+function isFileOrBlobObject(value) {
+    var _a, _b;
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
+    // Check for File-like object (has name and lastModified)
+    var hasFileProps = typeof value.name === 'string' &&
+        typeof value.lastModified === 'number';
+    // Check for Blob-like object (has size, type, and stream/text methods)
+    var hasBlobProps = typeof value.size === 'number' &&
+        typeof value.type === 'string' &&
+        (typeof value.stream === 'function' || typeof value.text === 'function');
+    // Check constructor names or toString representations
+    var constructorName = (_a = value.constructor) === null || _a === void 0 ? void 0 : _a.name;
+    var objectString = (_b = value.toString) === null || _b === void 0 ? void 0 : _b.call(value);
+    var isFileType = constructorName === 'File' ||
+        objectString === '[object File]' ||
+        constructorName === 'MockFile';
+    var isBlobType = constructorName === 'Blob' ||
+        objectString === '[object Blob]' ||
+        constructorName === 'MockBlob';
+    // Return true if any condition matches
+    return hasFileProps || hasBlobProps || isFileType || isBlobType;
+}
+/**
  * Converts an object payload to FormData, handling nested objects and arrays.
  *
  * @param {any} payload - The payload to convert to FormData.
@@ -406,7 +435,7 @@ function objectToFormData(payload, formData, parentKey) {
             var formKey_1 = parentKey ? "".concat(parentKey, ".").concat(key) : key;
             if (Array.isArray(value)) {
                 value.forEach(function (subValue, index) {
-                    if (subValue instanceof File) {
+                    if (isFileOrBlobObject(subValue)) {
                         formData.append("".concat(formKey_1, "[").concat(index, "]"), subValue);
                     }
                     else if (typeof subValue === "object" && subValue !== null) {
@@ -416,6 +445,9 @@ function objectToFormData(payload, formData, parentKey) {
                         formData.append("".concat(formKey_1, "[").concat(index, "]"), String(subValue));
                     }
                 });
+            }
+            else if (isFileOrBlobObject(value)) {
+                formData.append(formKey_1, value);
             }
             else if (typeof value === "object" && value !== null) {
                 objectToFormData(value, formData, formKey_1);

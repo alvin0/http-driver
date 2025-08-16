@@ -166,7 +166,7 @@ export function compileUrlByService(
         configServices.versionConfig
       );
     } else {
-      // Use simple baseURL + endpoint concatenation
+      // Use simple baseURL + endpoint concatenation (ignore any service versions)
       finalUrl = `${configServices.baseURL}/${apiInfo.url}`;
     }
     

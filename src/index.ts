@@ -414,7 +414,7 @@ class Driver {
               this.config.versionConfig
             );
           } else {
-            // Use simple baseURL + endpoint concatenation
+            // Use simple baseURL + endpoint concatenation (ignore any service versions)
             fullUrl = `${this.config.baseURL}/${apiInfo.url}`;
           }
 

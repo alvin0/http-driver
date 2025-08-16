@@ -25,12 +25,13 @@ export declare function findServiceApi(services: ServiceApi[], idToFind: string)
 export declare function compileService(idService: ServiceUrlCompile, services: ServiceApi[]): CompiledServiceInfo | null;
 /**
  * Builds URL with version injection based on configuration
+ * Returns simple URL concatenation if version building is disabled or not configured
  *
  * @param {string} baseURL - The base URL
  * @param {string} endpoint - The endpoint path
  * @param {string | number | undefined} version - Version to inject
  * @param {VersionConfig} versionConfig - Version configuration
- * @returns {string} - Complete URL with version injected
+ * @returns {string} - Complete URL with version injected (or simple concatenation if disabled)
  */
 export declare function buildUrlWithVersion(baseURL: string, endpoint: string, version: string | number | undefined, versionConfig?: VersionConfig): string;
 /**

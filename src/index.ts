@@ -399,16 +399,24 @@ class Driver {
         const apiInfo = compileService(idService, this.config.services);
 
         if (apiInfo != null) {
-          // Determine version to use: service version > global default version
-          const version = apiInfo.version || this.config.versionConfig?.defaultVersion;
+          let fullUrl: string;
           
-          // Build URL with version injection
-          const fullUrl = buildUrlWithVersion(
-            this.config.baseURL,
-            apiInfo.url,
-            version,
-            this.config.versionConfig
-          );
+          // Only use version building if explicitly enabled
+          if (this.config.versionConfig?.enabled) {
+            // Determine version to use: service version > global default version
+            const version = apiInfo.version || this.config.versionConfig?.defaultVersion;
+            
+            // Build URL with version injection
+            fullUrl = buildUrlWithVersion(
+              this.config.baseURL,
+              apiInfo.url,
+              version,
+              this.config.versionConfig
+            );
+          } else {
+            // Use simple baseURL + endpoint concatenation
+            fullUrl = `${this.config.baseURL}/${apiInfo.url}`;
+          }
 
           if (payload && Object.keys(payload).length > 0 && apiInfo.methods === MethodAPI.get) {
             const queryString = qs.stringify(payload);
@@ -526,7 +534,10 @@ export class DriverBuilder {
   }
 
   withVersionConfig(versionConfig: VersionConfig) {
-    this.config.versionConfig = versionConfig;
+    this.config.versionConfig = {
+      ...versionConfig,
+      enabled: versionConfig.enabled !== undefined ? versionConfig.enabled : true
+    };
     return this;
   }
 
@@ -535,6 +546,24 @@ export class DriverBuilder {
       this.config.versionConfig = {};
     }
     this.config.versionConfig.defaultVersion = version;
+    return this;
+  }
+
+  withVersionTemplate(template: string) {
+    if (!this.config.versionConfig) {
+      this.config.versionConfig = {};
+    }
+    this.config.versionConfig.template = template;
+    this.config.versionConfig.position = 'custom';
+    this.config.versionConfig.enabled = true;
+    return this;
+  }
+
+  enableVersioning(enabled: boolean = true) {
+    if (!this.config.versionConfig) {
+      this.config.versionConfig = {};
+    }
+    this.config.versionConfig.enabled = enabled;
     return this;
   }
 

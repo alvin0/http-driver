@@ -7,7 +7,7 @@ Modern, typed per-service HTTP client for Axios and Fetch (no apisauce). Standar
 ## Features
 
 - **Dual HTTP paths**: Axios via execService, Fetch via execServiceByFetch
-- **Flexible Version Management**: Dynamic version injection with multiple positioning strategies
+- **Flexible Version Management**: Optional dynamic version injection with multiple positioning strategies
 - **Standard ResponseFormat** shape with ok, status, data, headers, duration, problem, originalError
 - **Builder pattern** with full set of hooks (Axios sync/async transforms, error interceptor; Fetch request/response transforms)
 - **URL template compilation** and query assembly with version support
@@ -136,7 +136,7 @@ const listByFetch = await httpApi.execServiceByFetch({ id: "posts.list" });
 
 ## Version Configuration
 
-HttpDriver provides flexible version management for API services. Instead of hardcoding versions into baseURL, you can configure version handling in multiple ways.
+HttpDriver provides flexible version management for API services with optional version building. By default, version information in service definitions is ignored unless explicitly enabled.
 
 ### Why Version Configuration?
 
@@ -147,18 +147,80 @@ HttpDriver provides flexible version management for API services. Instead of har
 
 **After:**
 - Clean baseURL: `https://api.example.com`
-- Automatic version injection with flexible positioning
+- Optional automatic version injection with flexible positioning
 - Service-level version overrides
 - Support for multiple version patterns
+
+### Important: Version Building is Optional
+
+⚠️ **By default, version information in services is ignored.** You must explicitly enable version building to use this feature.
+
+```ts
+// ❌ Version is IGNORED by default
+const driver = new DriverBuilder()
+  .withBaseURL("https://api.example.com")
+  .withServices([
+    { id: "users", url: "users", method: MethodAPI.get, version: 1 } // This version is ignored!
+  ])
+  .build();
+
+// Result: https://api.example.com/users (version ignored)
+
+// ✅ Must explicitly enable version building
+const driverWithVersions = new DriverBuilder()
+  .withBaseURL("https://api.example.com")
+  .withServices([
+    { id: "users", url: "users", method: MethodAPI.get, version: 1 }
+  ])
+  .enableVersioning() // Enable version building
+  .build();
+
+// Result: https://api.example.com/v1/users
+```
+
+### Ways to Enable Version Building
+
+#### 1. Using enableVersioning()
+```ts
+const driver = new DriverBuilder()
+  .withBaseURL("https://api.example.com")
+  .withServices(services)
+  .enableVersioning() // Enable with default settings
+  .withGlobalVersion(1)
+  .build();
+```
+
+#### 2. Using withVersionTemplate() 
+```ts
+const driver = new DriverBuilder()
+  .withBaseURL("https://api.example.com")
+  .withServices(services)
+  .withVersionTemplate("{baseURL}/api/{version}/{endpoint}") // Auto-enables versioning
+  .build();
+```
+
+#### 3. Using withVersionConfig() with enabled: true
+```ts
+const driver = new DriverBuilder()
+  .withBaseURL("https://api.example.com")
+  .withServices(services)
+  .withVersionConfig({
+    enabled: true, // Explicitly enable
+    position: 'after-base',
+    defaultVersion: 1
+  })
+  .build();
+```
 
 ### Basic Usage
 
 ```ts
-// Simple global version
+// Simple global version (must enable first)
 const driver = new DriverBuilder()
   .withBaseURL("https://api.example.com")  // No hardcoded version
   .withServices(services)
-  .withGlobalVersion(1)  // Global version for all services
+  .enableVersioning()     // Enable version building
+  .withGlobalVersion(1)   // Global version for all services
   .build();
 
 // Result: https://api.example.com/v1/users
@@ -185,6 +247,7 @@ const services: ServiceApi[] = [
 const driver = new DriverBuilder()
   .withBaseURL("https://api.example.com")
   .withServices(services)
+  .enableVersioning()    // Must enable version building
   .withGlobalVersion(1)
   .build();
 
@@ -196,6 +259,7 @@ const driver = new DriverBuilder()
 
 #### After Base URL (Default)
 ```ts
+.enableVersioning()  // Enable version building
 .withVersionConfig({
   position: 'after-base',
   defaultVersion: 1
@@ -205,6 +269,7 @@ const driver = new DriverBuilder()
 
 #### Before Endpoint
 ```ts
+.enableVersioning()  // Enable version building
 .withVersionConfig({
   position: 'before-endpoint',
   defaultVersion: 1
@@ -214,6 +279,7 @@ const driver = new DriverBuilder()
 
 #### Subdomain Versioning
 ```ts
+.enableVersioning()  // Enable version building
 .withVersionConfig({
   position: 'prefix',
   defaultVersion: 1
@@ -221,13 +287,10 @@ const driver = new DriverBuilder()
 // Result: https://v1.api.example.com/users
 ```
 
-#### Custom Template
+#### Custom Template (Auto-enables versioning)
 ```ts
-.withVersionConfig({
-  position: 'custom',
-  template: '{baseURL}/api/{version}/{endpoint}',
-  defaultVersion: 1
-})
+.withVersionTemplate("{baseURL}/api/{version}/{endpoint}")
+.withGlobalVersion(1)
 // Result: https://api.example.com/api/v1/users
 ```
 
@@ -238,9 +301,10 @@ const driver = new DriverBuilder()
 const driver = new DriverBuilder()
   .withBaseURL("https://api.company.com")
   .withVersionConfig({
+    enabled: true,       // Explicitly enable
     position: 'custom',
     template: '{baseURL}/rest/api/{version}/services/{endpoint}',
-    prefix: 'api-v',  // Custom prefix instead of 'v'
+    prefix: 'api-v',     // Custom prefix instead of 'v'
     defaultVersion: '2024.1'
   })
   .withServices(services)
@@ -253,9 +317,10 @@ const driver = new DriverBuilder()
 
 ```ts
 interface VersionConfig {
+  enabled?: boolean;    // Enable/disable version building (default: false)
   position?: 'after-base' | 'before-endpoint' | 'prefix' | 'custom';
-  template?: string;  // For custom position: '{baseURL}/api/{version}/{endpoint}'
-  prefix?: string;    // Default: 'v', set to '' for no prefix
+  template?: string;    // For custom position: '{baseURL}/api/{version}/{endpoint}'
+  prefix?: string;      // Default: 'v', set to '' for no prefix
   defaultVersion?: string | number;  // Global default version
 }
 ```
@@ -263,11 +328,34 @@ interface VersionConfig {
 ### Builder Methods
 
 ```ts
+// Enable version building
+.enableVersioning(enabled?: boolean)
+
+// Set version template (auto-enables versioning)
+.withVersionTemplate(template: string)
+
 // Set complete version configuration
 .withVersionConfig(config: VersionConfig)
 
 // Quick set global version only  
 .withGlobalVersion(version: string | number)
+```
+
+### Migration from Previous Versions
+
+If you're upgrading from a previous version where version building was always enabled:
+
+```ts
+// Before (automatic versioning)
+const driver = new DriverBuilder()
+  .withServices([{ id: 'users', url: 'users', method: 'get', version: 1 }])
+  .build();
+
+// After (must enable explicitly)
+const driver = new DriverBuilder()
+  .withServices([{ id: 'users', url: 'users', method: 'get', version: 1 }])
+  .enableVersioning() // Add this line
+  .build();
 ```
 
 For detailed examples and migration guide, see [Version Configuration Documentation](docs/version-configuration.md).
@@ -456,7 +544,8 @@ export function usePosts() {
 
 The repository includes runnable examples:
 - **Basic JSONPlaceholder and DummyJSON flows**
-- **Version Configuration examples** - Various versioning strategies
+- **Version Configuration examples** - Various versioning strategies and enable/disable patterns
+- **Version Builder examples** - Comprehensive examples showing optional version building
 - **Advanced samples** (AbortController, transforms, httpClientFetch)
 - **Full Builder demo** (all hooks)
 
@@ -473,6 +562,8 @@ Entry point: `example/index.ts`
 - DriverBuilder
   - withBaseURL(baseURL: string)
   - withServices(services: ServiceApi[])
+  - enableVersioning(enabled?: boolean) - Enable/disable version building
+  - withVersionTemplate(template: string) - Set custom template and auto-enable versioning
   - withGlobalVersion(version: string | number)
   - withVersionConfig(config: VersionConfig)
   - withAddRequestTransformAxios(fn)

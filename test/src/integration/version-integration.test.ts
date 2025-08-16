@@ -27,6 +27,7 @@ describe("Version Configuration Integration", () => {
       .withBaseURL("https://api.example.com")
       .withServices(services)
       .withGlobalVersion(1)
+      .enableVersioning() // Must enable versioning
       .build();
 
     const result = driver.getInfoURL({ id: "user.list" });
@@ -38,6 +39,7 @@ describe("Version Configuration Integration", () => {
       .withBaseURL("https://api.example.com")
       .withServices(services)
       .withGlobalVersion(1)
+      .enableVersioning() // Must enable versioning
       .build();
 
     const result = driver.getInfoURL({ 
@@ -52,6 +54,7 @@ describe("Version Configuration Integration", () => {
       .withBaseURL("https://api.example.com")
       .withServices(services)
       .withGlobalVersion(1)
+      .enableVersioning() // Must enable versioning
       .build();
 
     const result = driver.getInfoURL({ id: "post.list" });
@@ -63,6 +66,7 @@ describe("Version Configuration Integration", () => {
       .withBaseURL("https://api.example.com")
       .withServices(services)
       .withVersionConfig({
+        enabled: true, // Explicitly enable
         position: 'custom',
         template: '{baseURL}/api/{version}/{endpoint}',
         defaultVersion: 1,
@@ -78,6 +82,7 @@ describe("Version Configuration Integration", () => {
       .withBaseURL("https://api.example.com")
       .withServices(services)
       .withVersionConfig({
+        enabled: true, // Explicitly enable
         position: 'before-endpoint',
         defaultVersion: 1,
       })
@@ -92,6 +97,7 @@ describe("Version Configuration Integration", () => {
       .withBaseURL("https://api.example.com")
       .withServices(services)
       .withVersionConfig({
+        enabled: true, // Explicitly enable
         position: 'prefix',
         defaultVersion: 1,
       })
@@ -106,6 +112,7 @@ describe("Version Configuration Integration", () => {
       .withBaseURL("https://api.example.com")
       .withServices(services)
       .withVersionConfig({
+        enabled: true, // Explicitly enable
         prefix: '',
         defaultVersion: 1,
       })
@@ -120,6 +127,7 @@ describe("Version Configuration Integration", () => {
       .withBaseURL("https://api.example.com")
       .withServices(services)
       .withGlobalVersion(1)
+      .enableVersioning() // Must enable versioning
       .build();
 
     const result = driver.getInfoURL(
@@ -138,12 +146,12 @@ describe("Version Configuration Integration", () => {
     const result1 = driver.getInfoURL({ id: "user.list" });
     expect(result1.fullUrl).toBe("https://api.example.com/users");
 
-    // Service with specific version still works
+    // Service with specific version is also ignored when versioning not enabled
     const result2 = driver.getInfoURL({ 
       id: "user.detail", 
       params: { id: 123 } 
     });
-    expect(result2.fullUrl).toBe("https://api.example.com/v2/users/123");
+    expect(result2.fullUrl).toBe("https://api.example.com/users/123");
   });
 
   test("chaining withVersionConfig and withGlobalVersion works", () => {
@@ -151,6 +159,7 @@ describe("Version Configuration Integration", () => {
       .withBaseURL("https://api.example.com")
       .withServices(services)
       .withVersionConfig({
+        enabled: true, // Explicitly enable
         position: 'after-base',
         prefix: 'api-v',
       })

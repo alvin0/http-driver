@@ -405,14 +405,22 @@ var Driver = /** @class */ (function () {
                 });
             }); },
             getInfoURL: function (idService, payload) {
-                var _a;
+                var _a, _b;
                 if (payload === void 0) { payload = {}; }
                 var apiInfo = (0, index_1.compileService)(idService, _this.config.services);
                 if (apiInfo != null) {
-                    // Determine version to use: service version > global default version
-                    var version = apiInfo.version || ((_a = _this.config.versionConfig) === null || _a === void 0 ? void 0 : _a.defaultVersion);
-                    // Build URL with version injection
-                    var fullUrl = (0, index_1.buildUrlWithVersion)(_this.config.baseURL, apiInfo.url, version, _this.config.versionConfig);
+                    var fullUrl = void 0;
+                    // Only use version building if explicitly enabled
+                    if ((_a = _this.config.versionConfig) === null || _a === void 0 ? void 0 : _a.enabled) {
+                        // Determine version to use: service version > global default version
+                        var version = apiInfo.version || ((_b = _this.config.versionConfig) === null || _b === void 0 ? void 0 : _b.defaultVersion);
+                        // Build URL with version injection
+                        fullUrl = (0, index_1.buildUrlWithVersion)(_this.config.baseURL, apiInfo.url, version, _this.config.versionConfig);
+                    }
+                    else {
+                        // Use simple baseURL + endpoint concatenation
+                        fullUrl = "".concat(_this.config.baseURL, "/").concat(apiInfo.url);
+                    }
                     if (payload && Object.keys(payload).length > 0 && apiInfo.methods === driver_1.MethodAPI.get) {
                         var queryString = qs.stringify(payload);
                         var separator = fullUrl.includes('?') ? '&' : '?';
@@ -521,7 +529,7 @@ var DriverBuilder = /** @class */ (function () {
         return this;
     };
     DriverBuilder.prototype.withVersionConfig = function (versionConfig) {
-        this.config.versionConfig = versionConfig;
+        this.config.versionConfig = __assign(__assign({}, versionConfig), { enabled: versionConfig.enabled !== undefined ? versionConfig.enabled : true });
         return this;
     };
     DriverBuilder.prototype.withGlobalVersion = function (version) {
@@ -529,6 +537,23 @@ var DriverBuilder = /** @class */ (function () {
             this.config.versionConfig = {};
         }
         this.config.versionConfig.defaultVersion = version;
+        return this;
+    };
+    DriverBuilder.prototype.withVersionTemplate = function (template) {
+        if (!this.config.versionConfig) {
+            this.config.versionConfig = {};
+        }
+        this.config.versionConfig.template = template;
+        this.config.versionConfig.position = 'custom';
+        this.config.versionConfig.enabled = true;
+        return this;
+    };
+    DriverBuilder.prototype.enableVersioning = function (enabled) {
+        if (enabled === void 0) { enabled = true; }
+        if (!this.config.versionConfig) {
+            this.config.versionConfig = {};
+        }
+        this.config.versionConfig.enabled = enabled;
         return this;
     };
     DriverBuilder.prototype.withAddAsyncRequestTransformAxios = function (callback) {

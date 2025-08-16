@@ -1,5 +1,5 @@
 import { MethodAPI } from "../../../src/utils/driver-contracts";
-import { httpClientFetch } from "../../../src/utils/index";
+import { httpClientFetch, compileUrlByService } from "../../../src/utils/index";
 
 describe("Missing coverage test cases", () => {
   const originalFetch = globalThis.fetch;
@@ -54,9 +54,7 @@ describe("Missing coverage test cases", () => {
       globalThis.fetch = originalFetch;
     });
   
-    test("should use defaultVersion when service version is undefined (line 149)", async () => {
-      const { compileUrlByService } = await import("../../../src/utils/index");
-      
+    test("should use defaultVersion when service version is undefined (line 149)", () => {
       const configServices = {
         baseURL: "https://api.example.com",
         services: [
@@ -68,6 +66,7 @@ describe("Missing coverage test cases", () => {
           }
         ],
         versionConfig: {
+          enabled: true, // Must enable versioning
           defaultVersion: "2.0",
           position: "after-base" as any
         }
@@ -78,9 +77,7 @@ describe("Missing coverage test cases", () => {
       
       expect(result).not.toBeNull();
       expect(result?.url).toBe("https://api.example.com/v2.0/test");
-    });
-  
-    test("should handle undefined urlBuilder.param (line 279)", async () => {
+    });    test("should handle undefined urlBuilder.param (line 279)", async () => {
       const fakeResponse = {
         ok: true,
         status: 200,

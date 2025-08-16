@@ -16,6 +16,8 @@ export declare class DriverBuilder {
     withServices(services: ServiceApi[]): this;
     withVersionConfig(versionConfig: VersionConfig): this;
     withGlobalVersion(version: string | number): this;
+    withVersionTemplate(template: string): this;
+    enableVersioning(enabled?: boolean): this;
     withAddAsyncRequestTransformAxios(callback: AsyncRequestTransform): this;
     withAddAsyncResponseTransformAxios(callback: AsyncResponseTransform): this;
     withAddRequestTransformAxios(callback: (request: AxiosRequestConfig) => void): this;

@@ -3,6 +3,7 @@ import { DummyJSONApi } from "./src/app/api-dummpyjson";
 import { JsonPlaceholderApi } from "./src/app/api-jsonplaceholder";
 import { runFullBuilderDemo } from "./src/app/full-builder-demo";
 import { VersionExampleApi } from "./src/app/version-examples";
+import { runVersionBuilderExamples } from "./src/app/version-builder-examples";
 
 /**
  * Main function to call both APIs sequentially
@@ -27,6 +28,9 @@ async function main() {
 
   console.log("\nStarting Version Configuration Examples...");
   await versionApi.demonstrateVersioning();
+
+  console.log("\nStarting Version Builder Examples...");
+  runVersionBuilderExamples();
 }
 
 // Run the main function and catch any errors

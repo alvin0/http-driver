@@ -74,12 +74,13 @@ export function compileService(
 
 /**
  * Builds URL with version injection based on configuration
+ * Returns simple URL concatenation if version building is disabled or not configured
  *
  * @param {string} baseURL - The base URL 
  * @param {string} endpoint - The endpoint path
  * @param {string | number | undefined} version - Version to inject
  * @param {VersionConfig} versionConfig - Version configuration
- * @returns {string} - Complete URL with version injected
+ * @returns {string} - Complete URL with version injected (or simple concatenation if disabled)
  */
 export function buildUrlWithVersion(
   baseURL: string,
@@ -87,12 +88,17 @@ export function buildUrlWithVersion(
   version: string | number | undefined,
   versionConfig?: VersionConfig
 ): string {
-  // If no version provided, return simple concatenation
+  // If version building is not enabled, return simple concatenation
+  if (!versionConfig?.enabled) {
+    return `${baseURL}/${endpoint}`;
+  }
+
+  // If no version provided and version building is enabled, return simple concatenation
   if (!version) {
     return `${baseURL}/${endpoint}`;
   }
 
-  const config = versionConfig || {};
+  const config = versionConfig;
   const position = config.position || 'after-base';
   const prefix = config.prefix !== undefined ? config.prefix : 'v';
   const versionString = `${prefix}${version}`;
@@ -117,8 +123,8 @@ export function buildUrlWithVersion(
           .replace('{version}', versionString)
           .replace('{endpoint}', endpoint);
       }
-      // Fallback to after-base if no template provided
-      return `${baseURL}/${versionString}/${endpoint}`;
+      // If no template provided but custom position selected, throw error
+      throw new Error('Custom version position requires a template. Please provide a template in versionConfig.');
 
     case 'after-base':
     default:
@@ -145,19 +151,27 @@ export function compileUrlByService(
   const apiInfo = compileService(idService, configServices.services);
 
   if (apiInfo != null) {
-    // Determine version to use: service version > global default version
-    const version = apiInfo.version || configServices.versionConfig?.defaultVersion;
+    let finalUrl: string;
     
-    // Build URL with version injection
-    const versionedUrl = buildUrlWithVersion(
-      configServices.baseURL,
-      apiInfo.url,
-      version,
-      configServices.versionConfig
-    );
+    // Only use version building if explicitly enabled
+    if (configServices.versionConfig?.enabled) {
+      // Determine version to use: service version > global default version
+      const version = apiInfo.version || configServices.versionConfig?.defaultVersion;
+      
+      // Build URL with version injection
+      finalUrl = buildUrlWithVersion(
+        configServices.baseURL,
+        apiInfo.url,
+        version,
+        configServices.versionConfig
+      );
+    } else {
+      // Use simple baseURL + endpoint concatenation
+      finalUrl = `${configServices.baseURL}/${apiInfo.url}`;
+    }
     
     return compileUrl(
-      versionedUrl,
+      finalUrl,
       apiInfo.methods,
       payload ?? {},
       options

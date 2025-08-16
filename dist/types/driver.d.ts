@@ -71,6 +71,7 @@ export interface VersionConfig {
      * Custom template for version placement
      * Use {baseURL}, {version}, {endpoint} as placeholders
      * Example: "{baseURL}/api/{version}/{endpoint}"
+     * REQUIRED when using version functionality
      */
     template?: string;
     /**
@@ -82,6 +83,11 @@ export interface VersionConfig {
      * Global version to apply to all services without explicit version
      */
     defaultVersion?: string | number;
+    /**
+     * Enable version building functionality
+     * When false or undefined, version building is disabled
+     */
+    enabled?: boolean;
 }
 export interface DriverConfig {
     baseURL: string;

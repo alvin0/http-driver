@@ -123,19 +123,24 @@ function compileService(idService, services) {
 exports.compileService = compileService;
 /**
  * Builds URL with version injection based on configuration
+ * Returns simple URL concatenation if version building is disabled or not configured
  *
  * @param {string} baseURL - The base URL
  * @param {string} endpoint - The endpoint path
  * @param {string | number | undefined} version - Version to inject
  * @param {VersionConfig} versionConfig - Version configuration
- * @returns {string} - Complete URL with version injected
+ * @returns {string} - Complete URL with version injected (or simple concatenation if disabled)
  */
 function buildUrlWithVersion(baseURL, endpoint, version, versionConfig) {
-    // If no version provided, return simple concatenation
+    // If version building is not enabled, return simple concatenation
+    if (!(versionConfig === null || versionConfig === void 0 ? void 0 : versionConfig.enabled)) {
+        return "".concat(baseURL, "/").concat(endpoint);
+    }
+    // If no version provided and version building is enabled, return simple concatenation
     if (!version) {
         return "".concat(baseURL, "/").concat(endpoint);
     }
-    var config = versionConfig || {};
+    var config = versionConfig;
     var position = config.position || 'after-base';
     var prefix = config.prefix !== undefined ? config.prefix : 'v';
     var versionString = "".concat(prefix).concat(version);
@@ -157,8 +162,8 @@ function buildUrlWithVersion(baseURL, endpoint, version, versionConfig) {
                     .replace('{version}', versionString)
                     .replace('{endpoint}', endpoint);
             }
-            // Fallback to after-base if no template provided
-            return "".concat(baseURL, "/").concat(versionString, "/").concat(endpoint);
+            // If no template provided but custom position selected, throw error
+            throw new Error('Custom version position requires a template. Please provide a template in versionConfig.');
         case 'after-base':
         default:
             // baseURL/v1/endpoint (most common pattern)
@@ -176,14 +181,22 @@ exports.buildUrlWithVersion = buildUrlWithVersion;
  * @returns {CompileUrlResult | null} - The compiled URL information or null if the service is not found.
  */
 function compileUrlByService(configServices, idService, payload, options) {
-    var _a;
+    var _a, _b;
     var apiInfo = compileService(idService, configServices.services);
     if (apiInfo != null) {
-        // Determine version to use: service version > global default version
-        var version = apiInfo.version || ((_a = configServices.versionConfig) === null || _a === void 0 ? void 0 : _a.defaultVersion);
-        // Build URL with version injection
-        var versionedUrl = buildUrlWithVersion(configServices.baseURL, apiInfo.url, version, configServices.versionConfig);
-        return compileUrl(versionedUrl, apiInfo.methods, payload !== null && payload !== void 0 ? payload : {}, options);
+        var finalUrl = void 0;
+        // Only use version building if explicitly enabled
+        if ((_a = configServices.versionConfig) === null || _a === void 0 ? void 0 : _a.enabled) {
+            // Determine version to use: service version > global default version
+            var version = apiInfo.version || ((_b = configServices.versionConfig) === null || _b === void 0 ? void 0 : _b.defaultVersion);
+            // Build URL with version injection
+            finalUrl = buildUrlWithVersion(configServices.baseURL, apiInfo.url, version, configServices.versionConfig);
+        }
+        else {
+            // Use simple baseURL + endpoint concatenation
+            finalUrl = "".concat(configServices.baseURL, "/").concat(apiInfo.url);
+        }
+        return compileUrl(finalUrl, apiInfo.methods, payload !== null && payload !== void 0 ? payload : {}, options);
     }
     console.error("Service ".concat(idService.id, " in driver not found"));
     return null;

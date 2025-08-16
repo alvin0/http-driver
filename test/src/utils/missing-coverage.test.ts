@@ -1,6 +1,101 @@
 import { MethodAPI } from "../../../src/utils/driver-contracts";
 import { httpClientFetch, compileUrlByService } from "../../../src/utils/index";
 
+// Mock FormData for Node.js environment compatibility
+class MockFormData {
+  private data = new Map<string, any>();
+
+  append(name: string, value: any, filename?: string) {
+    this.data.set(name, value);
+  }
+
+  get(name: string): any {
+    return this.data.get(name);
+  }
+
+  getAll(name: string): any[] {
+    const value = this.data.get(name);
+    return value ? [value] : [];
+  }
+
+  has(name: string): boolean {
+    return this.data.has(name);
+  }
+
+  delete(name: string): void {
+    this.data.delete(name);
+  }
+
+  set(name: string, value: any, filename?: string): void {
+    this.data.set(name, value);
+  }
+
+  entries(): IterableIterator<[string, any]> {
+    return this.data.entries();
+  }
+
+  keys(): IterableIterator<string> {
+    return this.data.keys();
+  }
+
+  values(): IterableIterator<any> {
+    return this.data.values();
+  }
+
+  [Symbol.iterator](): IterableIterator<[string, any]> {
+    return this.data.entries();
+  }
+
+  forEach(callback: (value: any, key: string, parent: MockFormData) => void): void {
+    this.data.forEach((value, key) => callback(value, key, this));
+  }
+}
+
+// Mock Blob and File for Node.js environment compatibility
+class MockBlob {
+  public size: number = 0;
+  public type: string = '';
+  private content: BlobPart[];
+
+  constructor(blobParts?: BlobPart[], options?: BlobPropertyBag) {
+    this.content = blobParts || [];
+    this.type = options?.type || '';
+    this.size = this.content.reduce((acc, part) => {
+      if (typeof part === 'string') return acc + part.length;
+      if (part instanceof ArrayBuffer) return acc + part.byteLength;
+      return acc;
+    }, 0);
+  }
+
+  stream() {
+    return new ReadableStream();
+  }
+
+  async text(): Promise<string> {
+    return this.content.join('');
+  }
+
+  async arrayBuffer(): Promise<ArrayBuffer> {
+    return new ArrayBuffer(this.size);
+  }
+}
+
+class MockFile extends MockBlob {
+  public name: string;
+  public lastModified: number;
+
+  constructor(fileBits: BlobPart[], fileName: string, options?: FilePropertyBag) {
+    super(fileBits, options);
+    this.name = fileName;
+    this.lastModified = options?.lastModified || Date.now();
+  }
+}
+
+// Set up global objects for Node.js 18.x compatibility
+(globalThis as any).Blob = MockBlob;
+(globalThis as any).File = MockFile;
+(globalThis as any).FormData = MockFormData;
+
 describe("Missing coverage test cases", () => {
   const originalFetch = globalThis.fetch;
 

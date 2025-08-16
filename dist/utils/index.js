@@ -70,8 +70,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.httpClientApiSauce = exports.removeNullValues = exports.httpClientFetch = exports.compileBodyFetchWithContextType = exports.compileUrl = exports.responseFormat = exports.compileUrlByService = exports.compileService = exports.findServiceApi = exports.replaceParamsInUrl = void 0;
-var apisauce_1 = require("apisauce");
+exports.removeNullValues = exports.httpClientFetch = exports.compileBodyFetchWithContextType = exports.compileUrl = exports.responseFormat = exports.compileUrlByService = exports.buildUrlWithVersion = exports.compileService = exports.findServiceApi = exports.replaceParamsInUrl = void 0;
 var qs = __importStar(require("qs"));
 /**
  * Replaces placeholders in a URL with corresponding parameter values.
@@ -123,6 +122,51 @@ function compileService(idService, services) {
 }
 exports.compileService = compileService;
 /**
+ * Builds URL with version injection based on configuration
+ *
+ * @param {string} baseURL - The base URL
+ * @param {string} endpoint - The endpoint path
+ * @param {string | number | undefined} version - Version to inject
+ * @param {VersionConfig} versionConfig - Version configuration
+ * @returns {string} - Complete URL with version injected
+ */
+function buildUrlWithVersion(baseURL, endpoint, version, versionConfig) {
+    // If no version provided, return simple concatenation
+    if (!version) {
+        return "".concat(baseURL, "/").concat(endpoint);
+    }
+    var config = versionConfig || {};
+    var position = config.position || 'after-base';
+    var prefix = config.prefix !== undefined ? config.prefix : 'v';
+    var versionString = "".concat(prefix).concat(version);
+    switch (position) {
+        case 'prefix':
+            // v1.example.com/endpoint
+            var urlParts = baseURL.split('://');
+            if (urlParts.length === 2) {
+                return "".concat(urlParts[0], "://").concat(versionString, ".").concat(urlParts[1], "/").concat(endpoint);
+            }
+            return "".concat(versionString, ".").concat(baseURL, "/").concat(endpoint);
+        case 'before-endpoint':
+            // baseURL/endpoint/v1
+            return "".concat(baseURL, "/").concat(endpoint, "/").concat(versionString);
+        case 'custom':
+            if (config.template) {
+                return config.template
+                    .replace('{baseURL}', baseURL)
+                    .replace('{version}', versionString)
+                    .replace('{endpoint}', endpoint);
+            }
+            // Fallback to after-base if no template provided
+            return "".concat(baseURL, "/").concat(versionString, "/").concat(endpoint);
+        case 'after-base':
+        default:
+            // baseURL/v1/endpoint (most common pattern)
+            return "".concat(baseURL, "/").concat(versionString, "/").concat(endpoint);
+    }
+}
+exports.buildUrlWithVersion = buildUrlWithVersion;
+/**
  * Compiles the full URL and request details for a given service.
  *
  * @param {DriverConfig} configServices - Configuration object containing baseURL and services.
@@ -132,9 +176,14 @@ exports.compileService = compileService;
  * @returns {CompileUrlResult | null} - The compiled URL information or null if the service is not found.
  */
 function compileUrlByService(configServices, idService, payload, options) {
+    var _a;
     var apiInfo = compileService(idService, configServices.services);
     if (apiInfo != null) {
-        return compileUrl(configServices.baseURL + "/" + apiInfo.url, apiInfo.methods, payload !== null && payload !== void 0 ? payload : {}, options);
+        // Determine version to use: service version > global default version
+        var version = apiInfo.version || ((_a = configServices.versionConfig) === null || _a === void 0 ? void 0 : _a.defaultVersion);
+        // Build URL with version injection
+        var versionedUrl = buildUrlWithVersion(configServices.baseURL, apiInfo.url, version, configServices.versionConfig);
+        return compileUrl(versionedUrl, apiInfo.methods, payload !== null && payload !== void 0 ? payload : {}, options);
     }
     console.error("Service ".concat(idService.id, " in driver not found"));
     return null;
@@ -340,26 +389,26 @@ function objectToFormData(payload, formData, parentKey) {
     payload = removeNullValues(payload);
     var _loop_1 = function (key) {
         if (payload.hasOwnProperty(key)) {
-            var value_1 = payload[key];
+            var value = payload[key];
             var formKey_1 = parentKey ? "".concat(parentKey, ".").concat(key) : key;
-            if (Array.isArray(value_1)) {
-                value_1.forEach(function (subValue, index) {
+            if (Array.isArray(value)) {
+                value.forEach(function (subValue, index) {
                     if (subValue instanceof File) {
                         formData.append("".concat(formKey_1, "[").concat(index, "]"), subValue);
                     }
-                    else if (typeof value_1 === "object" && value_1 !== null) {
+                    else if (typeof subValue === "object" && subValue !== null) {
                         objectToFormData(subValue, formData, "".concat(formKey_1, "[").concat(index, "]"));
                     }
                     else {
-                        formData.append("".concat(formKey_1, "[").concat(index, "]"), String(value_1));
+                        formData.append("".concat(formKey_1, "[").concat(index, "]"), String(subValue));
                     }
                 });
             }
-            else if (typeof value_1 === "object" && value_1 !== null) {
-                objectToFormData(value_1, formData, formKey_1);
+            else if (typeof value === "object" && value !== null) {
+                objectToFormData(value, formData, formKey_1);
             }
             else {
-                formData.append(formKey_1, String(value_1));
+                formData.append(formKey_1, String(value));
             }
         }
     };
@@ -368,6 +417,3 @@ function objectToFormData(payload, formData, parentKey) {
     }
     return formData;
 }
-exports.httpClientApiSauce = (0, apisauce_1.create)({
-    baseURL: ""
-});

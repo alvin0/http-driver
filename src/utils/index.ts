@@ -1,4 +1,3 @@
-import { create } from "apisauce";
 import * as qs from "qs";
 import type {
   CompiledServiceInfo,
@@ -9,7 +8,8 @@ import type {
   ServiceApi,
   ServiceUrlCompile,
   UrlBuilder,
-} from "./driver-contracts";
+  VersionConfig,
+} from "../types/driver";
 
 /**
  * Replaces placeholders in a URL with corresponding parameter values.
@@ -73,6 +73,61 @@ export function compileService(
 }
 
 /**
+ * Builds URL with version injection based on configuration
+ *
+ * @param {string} baseURL - The base URL 
+ * @param {string} endpoint - The endpoint path
+ * @param {string | number | undefined} version - Version to inject
+ * @param {VersionConfig} versionConfig - Version configuration
+ * @returns {string} - Complete URL with version injected
+ */
+export function buildUrlWithVersion(
+  baseURL: string,
+  endpoint: string,
+  version: string | number | undefined,
+  versionConfig?: VersionConfig
+): string {
+  // If no version provided, return simple concatenation
+  if (!version) {
+    return `${baseURL}/${endpoint}`;
+  }
+
+  const config = versionConfig || {};
+  const position = config.position || 'after-base';
+  const prefix = config.prefix !== undefined ? config.prefix : 'v';
+  const versionString = `${prefix}${version}`;
+
+  switch (position) {
+    case 'prefix':
+      // v1.example.com/endpoint
+      const urlParts = baseURL.split('://');
+      if (urlParts.length === 2) {
+        return `${urlParts[0]}://${versionString}.${urlParts[1]}/${endpoint}`;
+      }
+      return `${versionString}.${baseURL}/${endpoint}`;
+
+    case 'before-endpoint':
+      // baseURL/endpoint/v1
+      return `${baseURL}/${endpoint}/${versionString}`;
+
+    case 'custom':
+      if (config.template) {
+        return config.template
+          .replace('{baseURL}', baseURL)
+          .replace('{version}', versionString)
+          .replace('{endpoint}', endpoint);
+      }
+      // Fallback to after-base if no template provided
+      return `${baseURL}/${versionString}/${endpoint}`;
+
+    case 'after-base':
+    default:
+      // baseURL/v1/endpoint (most common pattern)
+      return `${baseURL}/${versionString}/${endpoint}`;
+  }
+}
+
+/**
  * Compiles the full URL and request details for a given service.
  *
  * @param {DriverConfig} configServices - Configuration object containing baseURL and services.
@@ -90,8 +145,19 @@ export function compileUrlByService(
   const apiInfo = compileService(idService, configServices.services);
 
   if (apiInfo != null) {
+    // Determine version to use: service version > global default version
+    const version = apiInfo.version || configServices.versionConfig?.defaultVersion;
+    
+    // Build URL with version injection
+    const versionedUrl = buildUrlWithVersion(
+      configServices.baseURL,
+      apiInfo.url,
+      version,
+      configServices.versionConfig
+    );
+    
     return compileUrl(
-      configServices.baseURL + "/" + apiInfo.url,
+      versionedUrl,
       apiInfo.methods,
       payload ?? {},
       options
@@ -339,10 +405,10 @@ function objectToFormData(
         value.forEach((subValue: any, index: number) => {
           if (subValue instanceof File) {
             formData.append(`${formKey}[${index}]`, subValue);
-          } else if (typeof value === "object" && value !== null) {
+          } else if (typeof subValue === "object" && subValue !== null) {
             objectToFormData(subValue, formData, `${formKey}[${index}]`);
           } else {
-            formData.append(`${formKey}[${index}]`, String(value));
+            formData.append(`${formKey}[${index}]`, String(subValue));
           }
         });
       } else if (typeof value === "object" && value !== null) {
@@ -355,6 +421,3 @@ function objectToFormData(
   return formData;
 }
 
-export const httpClientApiSauce = create({
-  baseURL: ""
-});

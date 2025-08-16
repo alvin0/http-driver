@@ -1,14 +1,7 @@
 "use strict";
+// Compatibility re-exports for tests and existing imports.
+// Re-export value enum and type interfaces from the new types module.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MethodAPI = void 0;
-var MethodAPI;
-(function (MethodAPI) {
-    MethodAPI["get"] = "get";
-    MethodAPI["delete"] = "delete";
-    MethodAPI["head"] = "head";
-    MethodAPI["post"] = "post";
-    MethodAPI["put"] = "put";
-    MethodAPI["patch"] = "patch";
-    MethodAPI["link"] = "link";
-    MethodAPI["unlink"] = "unlink";
-})(MethodAPI || (exports.MethodAPI = MethodAPI = {}));
+var driver_1 = require("../types/driver");
+Object.defineProperty(exports, "MethodAPI", { enumerable: true, get: function () { return driver_1.MethodAPI; } });

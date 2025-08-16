@@ -1,5 +1,5 @@
-import { AuthenticationError, HTTPError, MalformedResponseError, NetworkError, RedirectError, TimeoutError, TLSError } from "./custom-errors";
-import type { ResponseFormat } from "./driver-contracts";
+import type { ResponseFormat } from "../types/driver";
+import { AuthenticationError, HTTPError, MalformedResponseError, NetworkError, RedirectError, TimeoutError, TLSError } from "../types/errors";
 
 // ErrorResponse must match ResponseFormat structure
 export function normalizeError(error: unknown): ResponseFormat {

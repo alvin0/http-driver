@@ -9,7 +9,6 @@
     "allowSyntheticDefaultImports": true,
   },
   "paths": {
-    "apisauce": ["node_modules/apisauce"],
     "qs": ["node_modules/qs"],
     "@types/qs": ["node_modules/@types/qs"]
   },

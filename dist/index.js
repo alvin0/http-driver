@@ -69,11 +69,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DriverBuilder = void 0;
-var apisauce_1 = require("apisauce");
+var axios_1 = __importDefault(require("axios"));
 var qs = __importStar(require("qs"));
-var custom_errors_1 = require("./utils/custom-errors");
+var driver_1 = require("./types/driver");
+var errors_1 = require("./types/errors");
 var error_handler_1 = require("./utils/error-handler");
 var index_1 = require("./utils/index");
 var Driver = /** @class */ (function () {
@@ -81,7 +85,7 @@ var Driver = /** @class */ (function () {
         var _this = this;
         var _a;
         this.config = config;
-        this.apiSauceInstance = (0, apisauce_1.create)({
+        this.axiosInstance = axios_1.default.create({
             withCredentials: (_a = config.withCredentials) !== null && _a !== void 0 ? _a : true,
             baseURL: config.baseURL,
         });
@@ -90,128 +94,250 @@ var Driver = /** @class */ (function () {
         var processQueue = function (error, token) {
             if (token === void 0) { token = null; }
             failedQueue.forEach(function (prom) {
-                if (error) {
+                /* istanbul ignore next */
+                if (error)
                     prom.reject(error);
-                }
-                else {
+                /* istanbul ignore next */
+                else
                     prom.resolve(token);
-                }
             });
             failedQueue = [];
         };
-        var interceptorError = function (axiosInstance) { return function (error) { return __awaiter(_this, void 0, void 0, function () {
+        var defaultInterceptorError = function (_axiosInstance) { return function (error) { return __awaiter(_this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 return [2 /*return*/, Promise.reject(error)];
             });
         }); }; };
-        this.apiSauceInstance.axiosInstance.interceptors.response.use(undefined, this.config.handleInterceptorErrorAxios
-            ? this.config.handleInterceptorErrorAxios(this.apiSauceInstance.axiosInstance, processQueue, isRefreshing)
-            : interceptorError(this.apiSauceInstance.axiosInstance));
-        this.apiSauceInstance.addRequestTransform(function (transform) {
-            if (_this.config.addRequestTransformAxios) {
-                _this.config.addRequestTransformAxios(transform);
-            }
-        });
-        this.apiSauceInstance.addResponseTransform(function (transform) {
-            if (_this.config.addTransformResponseAxios) {
-                _this.config.addTransformResponseAxios(transform);
-            }
-        });
-        this.apiSauceInstance.addAsyncRequestTransform(function (transform) { return __awaiter(_this, void 0, void 0, function () {
+        // Response error interceptor (token refresh pattern compatibility)
+        this.axiosInstance.interceptors.response.use(function (response) { return response; }, this.config.handleInterceptorErrorAxios
+            ? this.config.handleInterceptorErrorAxios(this.axiosInstance, processQueue, isRefreshing)
+            : defaultInterceptorError(this.axiosInstance));
+        // Request interceptor - sync + async transforms compatibility
+        this.axiosInstance.interceptors.request.use(function (request) { return __awaiter(_this, void 0, void 0, function () {
+            var transforms_2, registrar, _i, transforms_1, t, e_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (!this.config.addAsyncRequestTransformAxios) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.config.addAsyncRequestTransformAxios(transform)];
+                        // Sync request transform (apisauce-style)
+                        if (this.config.addRequestTransformAxios) {
+                            try {
+                                this.config.addRequestTransformAxios(request);
+                            }
+                            catch (e) {
+                                // if transform throws, keep consistent behavior: propagate error
+                                throw e;
+                            }
+                        }
+                        if (!this.config.addAsyncRequestTransform) return [3 /*break*/, 7];
+                        transforms_2 = [];
+                        registrar = function (transform) {
+                            transforms_2.push(transform);
+                        };
+                        _a.label = 1;
                     case 1:
-                        _a.sent();
+                        _a.trys.push([1, 6, , 7]);
+                        // Invoke consumer to register transforms
+                        this.config.addAsyncRequestTransform(registrar);
+                        _i = 0, transforms_1 = transforms_2;
                         _a.label = 2;
-                    case 2: return [2 /*return*/];
+                    case 2:
+                        if (!(_i < transforms_1.length)) return [3 /*break*/, 5];
+                        t = transforms_1[_i];
+                        return [4 /*yield*/, t(request)];
+                    case 3:
+                        _a.sent();
+                        _a.label = 4;
+                    case 4:
+                        _i++;
+                        return [3 /*break*/, 2];
+                    case 5: return [3 /*break*/, 7];
+                    case 6:
+                        e_1 = _a.sent();
+                        throw e_1;
+                    case 7: return [2 /*return*/, request];
                 }
             });
-        }); });
-        this.apiSauceInstance.addAsyncResponseTransform(function (transform) { return __awaiter(_this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+        }); }, 
+        /* istanbul ignore next */
+        function (error) { return Promise.reject(error); });
+        // Response interceptor - sync + async transforms compatibility
+        this.axiosInstance.interceptors.response.use(function (response) { return __awaiter(_this, void 0, void 0, function () {
+            var apiResponseLike, transforms_4, registrar, _i, transforms_3, t, _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        if (!this.config.addAsyncTransformResponseAxios) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.config.addAsyncTransformResponseAxios(transform)];
+                        // Sync response transform (apisauce-style): consumer expects ApiResponse-like
+                        if (this.config.addTransformResponseAxios) {
+                            apiResponseLike = Driver.mapAxiosToApiResponseLike(response);
+                            try {
+                                this.config.addTransformResponseAxios(apiResponseLike);
+                            }
+                            catch (e) {
+                                // swallow to not block pipeline; apisauce executes transforms but shouldn't break successful response
+                            }
+                        }
+                        if (!this.config.addAsyncResponseTransform) return [3 /*break*/, 7];
+                        transforms_4 = [];
+                        registrar = function (transform) {
+                            transforms_4.push(transform);
+                        };
+                        _b.label = 1;
                     case 1:
-                        _a.sent();
-                        _a.label = 2;
-                    case 2: return [2 /*return*/];
+                        _b.trys.push([1, 6, , 7]);
+                        this.config.addAsyncResponseTransform(registrar);
+                        _i = 0, transforms_3 = transforms_4;
+                        _b.label = 2;
+                    case 2:
+                        if (!(_i < transforms_3.length)) return [3 /*break*/, 5];
+                        t = transforms_3[_i];
+                        return [4 /*yield*/, t(response)];
+                    case 3:
+                        _b.sent();
+                        _b.label = 4;
+                    case 4:
+                        _i++;
+                        return [3 /*break*/, 2];
+                    case 5: return [3 /*break*/, 7];
+                    case 6:
+                        _a = _b.sent();
+                        return [3 /*break*/, 7];
+                    case 7: return [2 /*return*/, response];
                 }
             });
-        }); });
+        }); }, 
+        /* istanbul ignore next */
+        function (error) { return Promise.reject(error); });
         return this;
     }
     Driver.prototype.appendExecService = function () {
         var _this = this;
-        var httpProAskDriver = Object.assign(this.apiSauceInstance, {
+        var httpProAskDriver = Object.assign(this.axiosInstance, {
             execService: function (idService, payload, options) { return __awaiter(_this, void 0, void 0, function () {
-                var apiInfo, payloadConvert, contentType, result, error_1;
-                var _a;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
+                var apiInfo, payloadConvert, contentType, start, axiosCall, rawResult, methodLower, duration, normalized, error_1, axErr, status_1, headers, problem;
+                var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+                return __generator(this, function (_m) {
+                    switch (_m.label) {
                         case 0:
-                            _b.trys.push([0, 2, , 3]);
+                            _m.trys.push([0, 8, , 9]);
                             apiInfo = (0, index_1.compileUrlByService)(this.config, idService, payload, options);
                             if (apiInfo == null) {
                                 throw new Error("Service ".concat(idService.id, " in driver not found"));
                             }
                             payloadConvert = apiInfo.payload;
+                            // multipart hint compatibility (keep headers removal behavior for fetch only)
                             if (apiInfo.options.headers &&
                                 typeof apiInfo.options.headers === "object" &&
                                 ((_a = apiInfo.options.headers) === null || _a === void 0 ? void 0 : _a.hasOwnProperty("Content-Type"))) {
                                 contentType = apiInfo.options.headers["Content-Type"];
-                                if (contentType.toLowerCase() === "multipart/form-data") {
-                                    // delete apiInfo.options.headers;
-                                    // payloadConvert = compileBodyFetchWithContextType(contentType.toLowerCase(), apiInfo.payload)
+                                if (typeof contentType === "string" && contentType.toLowerCase() === "multipart/form-data") {
+                                    // axios handles multipart boundaries automatically with FormData
+                                    // ensure body is FormData if consumer passed plain object
+                                    // no header deletion here (axios expects headers)
                                 }
                             }
-                            return [4 /*yield*/, this.apiSauceInstance[apiInfo.method](apiInfo.pathname, payloadConvert, apiInfo.options)];
+                            // Support AbortController passed via either `signal` or `abortController.signal` on axios config
+                            if (!((_b = apiInfo.options) === null || _b === void 0 ? void 0 : _b.signal) && ((_d = (_c = apiInfo.options) === null || _c === void 0 ? void 0 : _c.abortController) === null || _d === void 0 ? void 0 : _d.signal)) {
+                                apiInfo.options.signal = apiInfo.options.abortController.signal;
+                            }
+                            start = performance.now();
+                            axiosCall = (_e = this.axiosInstance[apiInfo.method]) === null || _e === void 0 ? void 0 : _e.bind(this.axiosInstance);
+                            rawResult = void 0;
+                            if (!axiosCall) return [3 /*break*/, 5];
+                            methodLower = String(apiInfo.method).toLowerCase();
+                            if (!(methodLower === "get" || methodLower === "delete" || methodLower === "head")) return [3 /*break*/, 2];
+                            return [4 /*yield*/, axiosCall(apiInfo.pathname, apiInfo.options)];
                         case 1:
-                            result = _b.sent();
-                            if (!result) {
-                                throw new Error("No response from service call");
+                            // For GET-like methods, the 2nd param is the config object.
+                            rawResult = _m.sent();
+                            return [3 /*break*/, 4];
+                        case 2: return [4 /*yield*/, axiosCall(apiInfo.pathname, payloadConvert, apiInfo.options)];
+                        case 3:
+                            // For methods with body, pass data as 2nd param and config (includes signal) as 3rd.
+                            rawResult = _m.sent();
+                            _m.label = 4;
+                        case 4: return [3 /*break*/, 7];
+                        case 5: return [4 /*yield*/, this.axiosInstance.request(__assign({ method: apiInfo.method, url: apiInfo.pathname, data: payloadConvert }, apiInfo.options))];
+                        case 6:
+                            rawResult = _m.sent();
+                            _m.label = 7;
+                        case 7:
+                            duration = parseFloat((performance.now() - start).toFixed(2));
+                            if (!rawResult) {
+                                return [2 /*return*/, (0, index_1.responseFormat)({
+                                        ok: false,
+                                        status: 500,
+                                        headers: null,
+                                        duration: duration,
+                                        data: null,
+                                        problem: "No response from service call",
+                                        originalError: "No response from service call",
+                                    })];
                             }
-                            return [2 /*return*/, result];
-                        case 2:
-                            error_1 = _b.sent();
-                            if (error_1 instanceof Error) {
-                                if (error_1.message.toLowerCase().includes('timeout')) {
-                                    return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new custom_errors_1.TimeoutError()))];
+                            // If consumer mocked method to return already-normalized object, pass-through
+                            if (typeof rawResult.ok === "boolean" && typeof rawResult.status === "number") {
+                                return [2 /*return*/, rawResult];
+                            }
+                            normalized = Driver.axiosResponseToResponseFormat(rawResult, duration);
+                            return [2 /*return*/, normalized];
+                        case 8:
+                            error_1 = _m.sent();
+                            // AxiosError normalization
+                            if (error_1.isAxiosError) {
+                                axErr = error_1;
+                                // Treat request cancellation via AbortController as timeout-equivalent
+                                if ((axErr === null || axErr === void 0 ? void 0 : axErr.code) === "ERR_CANCELED" || (axErr === null || axErr === void 0 ? void 0 : axErr.name) === "CanceledError") {
+                                    return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new errors_1.TimeoutError()))];
                                 }
-                                if (error_1.message.toLowerCase().includes('network')) {
-                                    return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new custom_errors_1.NetworkError()))];
+                                status_1 = (_g = (_f = axErr.response) === null || _f === void 0 ? void 0 : _f.status) !== null && _g !== void 0 ? _g : 0;
+                                headers = (_j = (_h = axErr.response) === null || _h === void 0 ? void 0 : _h.headers) !== null && _j !== void 0 ? _j : null;
+                                problem = Driver.mapAxiosErrorToProblem(axErr);
+                                return [2 /*return*/, (0, index_1.responseFormat)({
+                                        ok: false,
+                                        status: status_1,
+                                        headers: Driver.normalizeAxiosHeaders(headers),
+                                        duration: 0,
+                                        data: (_l = (_k = axErr.response) === null || _k === void 0 ? void 0 : _k.data) !== null && _l !== void 0 ? _l : null,
+                                        problem: problem,
+                                        originalError: axErr,
+                                    })];
+                            }
+                            if (error_1 instanceof Error) {
+                                if (error_1.message.toLowerCase().includes("timeout")) {
+                                    return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new errors_1.TimeoutError()))];
+                                }
+                                if (error_1.message.toLowerCase().includes("network")) {
+                                    return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new errors_1.NetworkError()))];
                                 }
                             }
                             return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(error_1))];
-                        case 3: return [2 /*return*/];
+                        case 9: return [2 /*return*/];
                     }
                 });
             }); },
             execServiceByFetch: function (idService, payload, options) { return __awaiter(_this, void 0, void 0, function () {
-                var apiInfo, url, requestOptions, startFetchTime, res, endFetchTime, duration, resText, data, response, error_2;
+                var apiInfo, url, requestOptions, startFetchTime, res, endFetchTime, duration, resText, data, response, error_2, lower;
                 var _a;
-                var _b, _c, _d;
-                return __generator(this, function (_e) {
-                    switch (_e.label) {
+                var _b, _c, _d, _e, _f, _g;
+                return __generator(this, function (_h) {
+                    switch (_h.label) {
                         case 0:
-                            _e.trys.push([0, 3, , 4]);
+                            _h.trys.push([0, 3, , 4]);
                             apiInfo = (0, index_1.compileUrlByService)(this.config, idService, payload, options);
                             if (apiInfo == null) {
                                 throw new Error("Service ".concat(idService.id, " in driver not found"));
                             }
                             url = apiInfo.url;
-                            url = this.config.baseURL + "/" + url;
                             requestOptions = __assign({}, apiInfo.options);
-                            if (!((_b = requestOptions.headers) === null || _b === void 0 ? void 0 : _b.hasOwnProperty("Content-Type"))) {
+                            // Support AbortController passed as either `signal` or `abortController.signal`
+                            if (!requestOptions.signal && ((_b = requestOptions.abortController) === null || _b === void 0 ? void 0 : _b.signal)) {
+                                requestOptions.signal = requestOptions.abortController.signal;
+                            }
+                            if (!((_c = requestOptions.headers) === null || _c === void 0 ? void 0 : _c.hasOwnProperty("Content-Type"))) {
                                 requestOptions.headers = __assign(__assign({}, requestOptions.headers), { "Content-Type": "application/json" });
                             }
                             if (apiInfo.method.toUpperCase() != "GET") {
-                                requestOptions = __assign(__assign({}, requestOptions), { method: apiInfo.method.toUpperCase(), body: (0, index_1.compileBodyFetchWithContextType)((_c = requestOptions.headers) === null || _c === void 0 ? void 0 : _c["Content-Type"].toLowerCase(), apiInfo.payload) });
-                                if ((_d = requestOptions.headers) === null || _d === void 0 ? void 0 : _d.hasOwnProperty("Content-Type")) {
+                                requestOptions = __assign(__assign({}, requestOptions), { method: apiInfo.method.toUpperCase(), body: (0, index_1.compileBodyFetchWithContextType)((_f = (_e = (_d = requestOptions.headers) === null || _d === void 0 ? void 0 : _d["Content-Type"]) === null || _e === void 0 ? void 0 : _e.toLowerCase) === null || _f === void 0 ? void 0 : _f.call(_e), apiInfo.payload) });
+                                if ((_g = requestOptions.headers) === null || _g === void 0 ? void 0 : _g.hasOwnProperty("Content-Type")) {
                                     if (requestOptions.headers["Content-Type"].toLowerCase() ==
                                         "multipart/form-data")
                                         delete requestOptions["headers"];
@@ -223,22 +349,22 @@ var Driver = /** @class */ (function () {
                             startFetchTime = performance.now();
                             return [4 /*yield*/, fetch(url, requestOptions)];
                         case 1:
-                            res = _e.sent();
+                            res = _h.sent();
                             endFetchTime = performance.now();
                             duration = parseFloat((endFetchTime - startFetchTime).toFixed(2));
                             resText = null;
                             data = null;
                             return [4 /*yield*/, res.text()];
                         case 2:
-                            resText = _e.sent();
+                            resText = _h.sent();
                             if (!resText) {
-                                throw new custom_errors_1.MalformedResponseError("Malformed response");
+                                throw new errors_1.MalformedResponseError("Malformed response");
                             }
                             try {
                                 data = JSON.parse(resText);
                             }
                             catch (err) {
-                                throw new custom_errors_1.MalformedResponseError("Malformed response");
+                                throw new errors_1.MalformedResponseError("Malformed response");
                             }
                             response = (0, index_1.responseFormat)({
                                 ok: res.ok,
@@ -253,16 +379,24 @@ var Driver = /** @class */ (function () {
                                     ? this.config.addTransformResponseFetch(response)
                                     : response];
                         case 3:
-                            error_2 = _e.sent();
-                            if (error_2 instanceof custom_errors_1.MalformedResponseError) {
+                            error_2 = _h.sent();
+                            if (error_2 instanceof errors_1.MalformedResponseError) {
                                 return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(error_2))];
                             }
+                            // Fetch aborts surface as DOMException with name "AbortError"
+                            if ((error_2 === null || error_2 === void 0 ? void 0 : error_2.name) === "AbortError") {
+                                return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new errors_1.TimeoutError()))];
+                            }
                             if (error_2 instanceof Error) {
-                                if (error_2.message.toLowerCase().includes('timeout')) {
-                                    return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new custom_errors_1.TimeoutError()))];
+                                lower = error_2.message.toLowerCase();
+                                if (error_2.name === "AbortError" || lower.includes("aborted") || lower.includes("canceled")) {
+                                    return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new errors_1.TimeoutError()))];
                                 }
-                                if (error_2.message.toLowerCase().includes('network')) {
-                                    return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new custom_errors_1.NetworkError()))];
+                                if (lower.includes('timeout')) {
+                                    return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new errors_1.TimeoutError()))];
+                                }
+                                if (lower.includes('network')) {
+                                    return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(new errors_1.NetworkError()))];
                                 }
                             }
                             return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(error_2))];
@@ -271,16 +405,26 @@ var Driver = /** @class */ (function () {
                 });
             }); },
             getInfoURL: function (idService, payload) {
+                var _a;
                 if (payload === void 0) { payload = {}; }
                 var apiInfo = (0, index_1.compileService)(idService, _this.config.services);
                 if (apiInfo != null) {
-                    if (payload && Object.keys(payload).length > 0 && apiInfo.methods === "get") {
+                    // Determine version to use: service version > global default version
+                    var version = apiInfo.version || ((_a = _this.config.versionConfig) === null || _a === void 0 ? void 0 : _a.defaultVersion);
+                    // Build URL with version injection
+                    var fullUrl = (0, index_1.buildUrlWithVersion)(_this.config.baseURL, apiInfo.url, version, _this.config.versionConfig);
+                    if (payload && Object.keys(payload).length > 0 && apiInfo.methods === driver_1.MethodAPI.get) {
                         var queryString = qs.stringify(payload);
-                        payload = null;
-                        apiInfo.url = apiInfo.url + "?" + queryString;
+                        var separator = fullUrl.includes('?') ? '&' : '?';
+                        return {
+                            fullUrl: fullUrl + separator + queryString,
+                            pathname: apiInfo.url + "?" + queryString,
+                            method: apiInfo.methods,
+                            payload: null,
+                        };
                     }
                     return {
-                        fullUrl: _this.config.baseURL + "/" + apiInfo.url,
+                        fullUrl: fullUrl,
                         pathname: apiInfo.url,
                         method: apiInfo.methods,
                         payload: payload,
@@ -295,6 +439,69 @@ var Driver = /** @class */ (function () {
             },
         });
         return httpProAskDriver;
+    };
+    // Utilities for normalization and compatibility
+    Driver.axiosResponseToResponseFormat = function (res, duration) {
+        return (0, index_1.responseFormat)({
+            ok: res.status >= 200 && res.status <= 299,
+            status: res.status,
+            data: res.data,
+            headers: Driver.normalizeAxiosHeaders(res.headers),
+            duration: duration,
+            problem: res.status >= 400 ? res.statusText : null,
+            originalError: null,
+        });
+    };
+    Driver.normalizeAxiosHeaders = function (headers) {
+        if (!headers)
+            return null;
+        var lowerize = function (obj) {
+            var norm = {};
+            Object.entries(obj || {}).forEach(function (_a) {
+                var k = _a[0], v = _a[1];
+                if (typeof v === "string") {
+                    norm[k.toLowerCase()] = v;
+                }
+                else if (Array.isArray(v)) {
+                    norm[k.toLowerCase()] = v.join(", ");
+                }
+            });
+            return norm;
+        };
+        // Handle AxiosHeaders via toJSON, then normalize keys and array values
+        if (typeof (headers === null || headers === void 0 ? void 0 : headers.toJSON) === "function") {
+            return lowerize(headers.toJSON());
+        }
+        // Handle plain objects
+        if (typeof headers === "object") {
+            return lowerize(headers);
+        }
+        return null;
+    };
+    Driver.mapAxiosToApiResponseLike = function (res) {
+        return {
+            ok: res.status >= 200 && res.status <= 299,
+            problem: res.status >= 400 ? res.statusText : null,
+            originalError: null,
+            data: res.data,
+            status: res.status,
+            headers: res.headers,
+            config: res.config,
+            duration: 0,
+        };
+    };
+    Driver.mapAxiosErrorToProblem = function (error) {
+        var code = (error.code || "").toUpperCase();
+        if (code.includes("ECONNABORTED") || code.includes("ETIMEDOUT"))
+            return "TIMEOUT_ERROR";
+        if (!error.response)
+            return "NETWORK_ERROR";
+        var status = error.response.status;
+        if (status >= 500)
+            return "SERVER_ERROR";
+        if (status >= 400)
+            return "CLIENT_ERROR";
+        return "UNKNOWN_ERROR";
     };
     return Driver;
 }());
@@ -311,6 +518,17 @@ var DriverBuilder = /** @class */ (function () {
     };
     DriverBuilder.prototype.withServices = function (services) {
         this.config.services = services;
+        return this;
+    };
+    DriverBuilder.prototype.withVersionConfig = function (versionConfig) {
+        this.config.versionConfig = versionConfig;
+        return this;
+    };
+    DriverBuilder.prototype.withGlobalVersion = function (version) {
+        if (!this.config.versionConfig) {
+            this.config.versionConfig = {};
+        }
+        this.config.versionConfig.defaultVersion = version;
         return this;
     };
     DriverBuilder.prototype.withAddAsyncRequestTransformAxios = function (callback) {

@@ -1,7 +1,7 @@
 {
   "name": "@alvin0/http-driver",
   "version": "0.1.11",
-  "description": "HttpDriver will help you manage APIs on a per-service basis. HttpDriver utilizes apisauce to wrap and also provides support for fetch.",
+  "description": "HttpDriver helps manage APIs on a per-service basis with direct Axios and Fetch support (no apisauce).",
   "main": "dist/index.js",
   "repository": {
     "type": "git",
@@ -10,7 +10,6 @@
   "keywords": [
     "javascript",
     "axios",
-    "apisauce",
     "fetch",
     "typescript",
     "http-driver",
@@ -27,7 +26,6 @@
     "start:example": "ts-node example/index.ts"
   },
   "dependencies": {
-    "apisauce": "^3.1.0",
     "axios": "^1.7.7",
     "qs": "^6.13.0"
   },

@@ -12,7 +12,7 @@ var __assign = (this && this.__assign) || function () {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isEmptyResponse = exports.isMalformedResponse = exports.handleErrorResponse = exports.normalizeError = void 0;
-var custom_errors_1 = require("./custom-errors");
+var errors_1 = require("../types/errors");
 // ErrorResponse must match ResponseFormat structure
 function normalizeError(error) {
     var baseError = {
@@ -21,7 +21,7 @@ function normalizeError(error) {
         headers: null,
         data: null
     };
-    if (error instanceof custom_errors_1.HTTPError) {
+    if (error instanceof errors_1.HTTPError) {
         return __assign(__assign({}, baseError), { status: error.status || 500, problem: error.message, originalError: error.message, data: error.data || null });
     }
     if (error instanceof Error) {
@@ -32,22 +32,22 @@ function normalizeError(error) {
 }
 exports.normalizeError = normalizeError;
 function handleErrorResponse(error) {
-    if (error instanceof custom_errors_1.AuthenticationError) {
+    if (error instanceof errors_1.AuthenticationError) {
         return normalizeError(error);
     }
-    if (error instanceof custom_errors_1.TimeoutError) {
+    if (error instanceof errors_1.TimeoutError) {
         return normalizeError(error);
     }
-    if (error instanceof custom_errors_1.NetworkError) {
+    if (error instanceof errors_1.NetworkError) {
         return normalizeError(error);
     }
-    if (error instanceof custom_errors_1.RedirectError) {
+    if (error instanceof errors_1.RedirectError) {
         return normalizeError(error);
     }
-    if (error instanceof custom_errors_1.TLSError) {
+    if (error instanceof errors_1.TLSError) {
         return normalizeError(error);
     }
-    if (error instanceof custom_errors_1.MalformedResponseError) {
+    if (error instanceof errors_1.MalformedResponseError) {
         return normalizeError(error);
     }
     return normalizeError(error);

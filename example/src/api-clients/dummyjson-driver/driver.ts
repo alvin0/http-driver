@@ -1,7 +1,5 @@
-import {
-  DriverInformation,
-  ServiceApi,
-} from "../../../../src/utils/driver-contracts";
+
+import { DriverInformation, ServiceApi } from "../../../../src/types/driver";
 import PostService from "./post-services";
 
 const baseURL: string = "https://dummyjson.com";

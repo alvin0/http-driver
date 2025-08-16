@@ -1,4 +1,4 @@
-import type { CompiledServiceInfo, CompileUrlResult, DriverConfig, MethodAPI, ResponseFormat, ServiceApi, ServiceUrlCompile, UrlBuilder } from "./driver-contracts";
+import type { CompiledServiceInfo, CompileUrlResult, DriverConfig, MethodAPI, ResponseFormat, ServiceApi, ServiceUrlCompile, UrlBuilder, VersionConfig } from "../types/driver";
 /**
  * Replaces placeholders in a URL with corresponding parameter values.
  *
@@ -23,6 +23,16 @@ export declare function findServiceApi(services: ServiceApi[], idToFind: string)
  * @returns {CompiledServiceInfo | null} - An object containing the compiled service URL, method, version, and options, or null if the service is not found.
  */
 export declare function compileService(idService: ServiceUrlCompile, services: ServiceApi[]): CompiledServiceInfo | null;
+/**
+ * Builds URL with version injection based on configuration
+ *
+ * @param {string} baseURL - The base URL
+ * @param {string} endpoint - The endpoint path
+ * @param {string | number | undefined} version - Version to inject
+ * @param {VersionConfig} versionConfig - Version configuration
+ * @returns {string} - Complete URL with version injected
+ */
+export declare function buildUrlWithVersion(baseURL: string, endpoint: string, version: string | number | undefined, versionConfig?: VersionConfig): string;
 /**
  * Compiles the full URL and request details for a given service.
  *
@@ -89,4 +99,3 @@ export declare function httpClientFetch(urlBuilder: UrlBuilder, payload?: {
  * @returns {T} - The cleaned object without null or undefined values.
  */
 export declare function removeNullValues<T extends Record<string, any>>(obj: T): T;
-export declare const httpClientApiSauce: import("apisauce").ApisauceInstance;

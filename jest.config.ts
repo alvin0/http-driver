@@ -12,15 +12,17 @@ const config: Config = {
   collectCoverageFrom: [
     "src/**/*.{js,ts}",
     "!src/**/*.d.ts",
-    "!src/index.ts"
+    // "!src/index.ts",
+    "!src/types/**"
   ],
   coverageReporters: ["text", "lcov", "html"],
+  coveragePathIgnorePatterns: ["/node_modules/"],
   coverageThreshold: {
     global: {
-      branches: 70,
-      functions: 70,
-      lines: 70,
-      statements: 70
+      branches: 100,
+      functions: 100,
+      lines: 100,
+      statements: 100
     }
   }
 };

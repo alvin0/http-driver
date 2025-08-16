@@ -34,3 +34,7 @@ jobs:
         with:
           name: coverage-report
           path: coverage/
+          if-no-files-found: warn
+          compression-level: 6
+          overwrite: false
+          include-hidden-files: false

@@ -1,6 +1,6 @@
+import { AxiosHeaders } from "axios";
 import { DriverBuilder } from "../../src/index";
 import { MethodAPI } from "../../src/utils/driver-contracts";
-import { AxiosHeaders } from "axios";
 
 describe("Driver - Branch Coverage Tests", () => {
   describe("normalizeAxiosHeaders branches (lines 489-493)", () => {

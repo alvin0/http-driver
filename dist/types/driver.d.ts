@@ -167,4 +167,19 @@ export interface CompiledServiceInfo {
     version: number | string | undefined;
     options: Record<string, any>;
 }
+export interface HttpDriverInstance {
+    execService: (idService: ServiceUrlCompile, payload?: any, options?: {
+        [key: string]: any;
+    }) => Promise<ResponseFormat>;
+    execServiceByFetch: (idService: ServiceUrlCompile, payload?: any, options?: {
+        [key: string]: any;
+    }) => Promise<ResponseFormat>;
+    getInfoURL: (idService: ServiceUrlCompile, payload?: any) => {
+        fullUrl: string | null;
+        pathname: string | null;
+        method: MethodAPI | null;
+        payload: any;
+        url?: string | null;
+    };
+}
 export {};

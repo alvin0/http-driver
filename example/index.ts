@@ -2,8 +2,8 @@ import { runAdvancedSamples } from "./src/app/advanced-samples";
 import { DummyJSONApi } from "./src/app/api-dummpyjson";
 import { JsonPlaceholderApi } from "./src/app/api-jsonplaceholder";
 import { runFullBuilderDemo } from "./src/app/full-builder-demo";
-import { VersionExampleApi } from "./src/app/version-examples";
 import { runVersionBuilderExamples } from "./src/app/version-builder-examples";
+import { VersionExampleApi } from "./src/app/version-examples";
 
 /**
  * Main function to call both APIs sequentially

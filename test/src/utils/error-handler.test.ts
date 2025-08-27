@@ -1,17 +1,17 @@
 import {
-    AuthenticationError,
-    HTTPError,
-    MalformedResponseError,
-    NetworkError,
-    RedirectError,
-    TimeoutError,
-    TLSError,
-} from "../../../src/utils/custom-errors";
+  AuthenticationError,
+  HTTPError,
+  MalformedResponseError,
+  NetworkError,
+  RedirectError,
+  TimeoutError,
+  TLSError,
+} from "../../../src/types/errors";
 import {
-    handleErrorResponse,
-    isEmptyResponse,
-    isMalformedResponse,
-    normalizeError,
+  handleErrorResponse,
+  isEmptyResponse,
+  isMalformedResponse,
+  normalizeError,
 } from "../../../src/utils/error-handler";
 
 describe("error-handler.normalizeError", () => {

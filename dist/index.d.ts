@@ -1,6 +1,5 @@
-import axios, { AxiosRequestConfig } from "axios";
-import type { ApiResponseLike, AsyncRequestTransform, AsyncResponseTransform, ResponseFormat, ServiceApi, ServiceUrlCompile, VersionConfig } from "./types/driver";
-import { MethodAPI } from "./types/driver";
+import { AxiosInstance, AxiosRequestConfig } from "axios";
+import type { ApiResponseLike, AsyncRequestTransform, AsyncResponseTransform, HttpDriverInstance, ResponseFormat, ServiceApi, VersionConfig } from "./types/driver";
 export interface DriverResponse {
     ok: boolean;
     problem: string;
@@ -10,6 +9,8 @@ export interface DriverResponse {
     headers: any | null;
     duration: number;
 }
+export type { DriverConfig, HttpDriverInstance, ResponseFormat, ServiceApi, ServiceUrlCompile, VersionConfig } from "./types/driver";
+export { MethodAPI } from "./types/driver";
 export declare class DriverBuilder {
     private config;
     withBaseURL(baseURL: string): this;
@@ -32,25 +33,5 @@ export declare class DriverBuilder {
             [key: string]: any;
         };
     }): this;
-    build(): axios.AxiosInstance & {
-        execService: (idService: ServiceUrlCompile<string>, payload?: any, options?: {
-            [key: string]: any;
-        } | undefined) => Promise<ResponseFormat<any>>;
-        execServiceByFetch: (idService: ServiceUrlCompile<string>, payload?: any, options?: {
-            [key: string]: any;
-        } | undefined) => Promise<ResponseFormat<any>>;
-        getInfoURL: (idService: ServiceUrlCompile<string>, payload?: any) => {
-            fullUrl: string;
-            pathname: string;
-            method: MethodAPI;
-            payload: any;
-            url?: undefined;
-        } | {
-            fullUrl: null;
-            method: null;
-            url: null;
-            payload: null;
-            pathname?: undefined;
-        };
-    };
+    build(): HttpDriverInstance & AxiosInstance;
 }

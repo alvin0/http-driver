@@ -73,13 +73,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DriverBuilder = void 0;
+exports.DriverBuilder = exports.MethodAPI = void 0;
 var axios_1 = __importDefault(require("axios"));
 var qs = __importStar(require("qs"));
 var driver_1 = require("./types/driver");
 var errors_1 = require("./types/errors");
 var error_handler_1 = require("./utils/error-handler");
 var index_1 = require("./utils/index");
+// Export enum as value
+var driver_2 = require("./types/driver");
+Object.defineProperty(exports, "MethodAPI", { enumerable: true, get: function () { return driver_2.MethodAPI; } });
 var Driver = /** @class */ (function () {
     function Driver(config) {
         var _this = this;
@@ -211,7 +214,7 @@ var Driver = /** @class */ (function () {
     }
     Driver.prototype.appendExecService = function () {
         var _this = this;
-        var httpProAskDriver = Object.assign(this.axiosInstance, {
+        var httpDriver = Object.assign(this.axiosInstance, {
             execService: function (idService, payload, options) { return __awaiter(_this, void 0, void 0, function () {
                 var apiInfo, payloadConvert, contentType, start, axiosCall, rawResult, methodLower, duration, normalized, error_1, axErr, status_1, headers, problem;
                 var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
@@ -315,13 +318,13 @@ var Driver = /** @class */ (function () {
                 });
             }); },
             execServiceByFetch: function (idService, payload, options) { return __awaiter(_this, void 0, void 0, function () {
-                var apiInfo, url, requestOptions, startFetchTime, res, endFetchTime, duration, resText, data, response, error_2, lower;
+                var apiInfo, url, requestOptions, startFetchTime, res, endFetchTime, duration, data, responseType, contentType, resText, err_1, response, error_2, lower;
                 var _a;
-                var _b, _c, _d, _e, _f, _g;
-                return __generator(this, function (_h) {
-                    switch (_h.label) {
+                var _b, _c, _d, _e, _f, _g, _h;
+                return __generator(this, function (_j) {
+                    switch (_j.label) {
                         case 0:
-                            _h.trys.push([0, 3, , 4]);
+                            _j.trys.push([0, 19, , 20]);
                             apiInfo = (0, index_1.compileUrlByService)(this.config, idService, payload, options);
                             if (apiInfo == null) {
                                 throw new Error("Service ".concat(idService.id, " in driver not found"));
@@ -349,23 +352,82 @@ var Driver = /** @class */ (function () {
                             startFetchTime = performance.now();
                             return [4 /*yield*/, fetch(url, requestOptions)];
                         case 1:
-                            res = _h.sent();
+                            res = _j.sent();
                             endFetchTime = performance.now();
                             duration = parseFloat((endFetchTime - startFetchTime).toFixed(2));
-                            resText = null;
                             data = null;
-                            return [4 /*yield*/, res.text()];
+                            responseType = options === null || options === void 0 ? void 0 : options.responseType;
+                            contentType = ((_h = res.headers.get('content-type')) === null || _h === void 0 ? void 0 : _h.toLowerCase()) || '';
+                            _j.label = 2;
                         case 2:
-                            resText = _h.sent();
+                            _j.trys.push([2, 17, , 18]);
+                            if (!(responseType === 'blob')) return [3 /*break*/, 4];
+                            return [4 /*yield*/, res.blob()];
+                        case 3:
+                            data = _j.sent();
+                            return [3 /*break*/, 16];
+                        case 4:
+                            if (!(responseType === 'arraybuffer')) return [3 /*break*/, 6];
+                            return [4 /*yield*/, res.arrayBuffer()];
+                        case 5:
+                            data = _j.sent();
+                            return [3 /*break*/, 16];
+                        case 6:
+                            if (!(responseType === 'text')) return [3 /*break*/, 8];
+                            return [4 /*yield*/, res.text()];
+                        case 7:
+                            data = _j.sent();
+                            return [3 /*break*/, 16];
+                        case 8:
+                            if (!(contentType.startsWith('image/') ||
+                                contentType.startsWith('application/pdf'))) return [3 /*break*/, 10];
+                            return [4 /*yield*/, res.blob()];
+                        case 9:
+                            // Auto-detect blob types based on content-type when no explicit responseType
+                            data = _j.sent();
+                            return [3 /*break*/, 16];
+                        case 10:
+                            if (!(contentType.startsWith('application/octet-stream') && !responseType)) return [3 /*break*/, 12];
+                            return [4 /*yield*/, res.blob()];
+                        case 11:
+                            // Only default to blob for octet-stream if no explicit responseType
+                            data = _j.sent();
+                            return [3 /*break*/, 16];
+                        case 12:
+                            if (!(contentType.startsWith('text/') && !contentType.includes('application/json'))) return [3 /*break*/, 14];
+                            return [4 /*yield*/, res.text()];
+                        case 13:
+                            // Auto-detect text types when no explicit responseType
+                            data = _j.sent();
+                            return [3 /*break*/, 16];
+                        case 14: return [4 /*yield*/, res.text()];
+                        case 15:
+                            resText = _j.sent();
                             if (!resText) {
                                 throw new errors_1.MalformedResponseError("Malformed response");
                             }
-                            try {
-                                data = JSON.parse(resText);
+                            // If content-type suggests JSON or no specific type, try to parse as JSON
+                            if (contentType.includes('application/json') || !contentType) {
+                                try {
+                                    data = JSON.parse(resText);
+                                }
+                                catch (err) {
+                                    throw new errors_1.MalformedResponseError("Malformed response");
+                                }
                             }
-                            catch (err) {
-                                throw new errors_1.MalformedResponseError("Malformed response");
+                            else {
+                                // Non-JSON content type, return as text
+                                data = resText;
                             }
+                            _j.label = 16;
+                        case 16: return [3 /*break*/, 18];
+                        case 17:
+                            err_1 = _j.sent();
+                            if (err_1 instanceof errors_1.MalformedResponseError) {
+                                throw err_1;
+                            }
+                            throw new errors_1.MalformedResponseError("Failed to parse response");
+                        case 18:
                             response = (0, index_1.responseFormat)({
                                 ok: res.ok,
                                 duration: duration,
@@ -378,8 +440,8 @@ var Driver = /** @class */ (function () {
                             return [2 /*return*/, this.config.addTransformResponseFetch
                                     ? this.config.addTransformResponseFetch(response)
                                     : response];
-                        case 3:
-                            error_2 = _h.sent();
+                        case 19:
+                            error_2 = _j.sent();
                             if (error_2 instanceof errors_1.MalformedResponseError) {
                                 return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(error_2))];
                             }
@@ -400,7 +462,7 @@ var Driver = /** @class */ (function () {
                                 }
                             }
                             return [2 /*return*/, (0, index_1.responseFormat)((0, error_handler_1.handleErrorResponse)(error_2))];
-                        case 4: return [2 /*return*/];
+                        case 20: return [2 /*return*/];
                     }
                 });
             }); },
@@ -440,13 +502,13 @@ var Driver = /** @class */ (function () {
                 }
                 return {
                     fullUrl: null,
+                    pathname: null,
                     method: null,
-                    url: null,
                     payload: null,
                 };
             },
         });
-        return httpProAskDriver;
+        return httpDriver;
     };
     // Utilities for normalization and compatibility
     Driver.axiosResponseToResponseFormat = function (res, duration) {

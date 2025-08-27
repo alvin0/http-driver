@@ -1,7 +1,7 @@
 // Advanced samples to showcase package capabilities: AbortController, transforms, getInfoURL, and httpClientFetch.
 
 import { DriverBuilder } from "../../../src";
-import { MethodAPI, type UrlBuilder } from "../../../src/utils/driver-contracts";
+import { MethodAPI, UrlBuilder } from "../../../src/types/driver";
 import { httpClientFetch } from "../../../src/utils/index";
 import { httpDummyjsonApiDriver, httpJsonPlaceholderDriver } from "../api-clients";
 import dummyjsonApiDriver from "../api-clients/dummyjson-driver/driver";

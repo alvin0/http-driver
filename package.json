@@ -1,6 +1,6 @@
 {
   "name": "@alvin0/http-driver",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "description": "HttpDriver helps manage APIs on a per-service basis with direct Axios and Fetch support (no apisauce).",
   "main": "dist/index.js",
   "repository": {

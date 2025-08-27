@@ -1,6 +1,6 @@
 import { AxiosError } from "axios";
 import { DriverBuilder } from "../../src/index";
-import { MethodAPI, type ServiceApi } from "../../src/utils/driver-contracts";
+import { MethodAPI, ServiceApi } from "../../src/types/driver";
 
 describe("Driver (src/index.ts) Comprehensive Coverage", () => {
   const originalFetch = globalThis.fetch;
@@ -542,7 +542,7 @@ describe("Driver (src/index.ts) Comprehensive Coverage", () => {
       const info = driver.getInfoURL({ id: "nonexistent" });
       expect(info.fullUrl).toBeNull();
       expect(info.method).toBeNull();
-      expect(info.url).toBeNull();
+      expect(info.pathname).toBeNull();
       expect(info.payload).toBeNull();
     });
 

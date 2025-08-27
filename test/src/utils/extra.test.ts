@@ -1,5 +1,5 @@
 import * as qs from "qs";
-import { MethodAPI } from "../../../src/utils/driver-contracts";
+import { MethodAPI } from "../../../src/types/driver";
 import { compileUrlByService } from "../../../src/utils/index";
 
 describe("compileUrlByService", () => {

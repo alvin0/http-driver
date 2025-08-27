@@ -5,6 +5,7 @@ import type {
   AsyncRequestTransform,
   AsyncResponseTransform,
   DriverConfig,
+  HttpDriverInstance,
   ResponseFormat,
   ServiceApi,
   ServiceUrlCompile,
@@ -30,6 +31,17 @@ export interface DriverResponse {
   headers: any | null;
   duration: number;
 }
+
+// Export types for client usage
+export type {
+  DriverConfig, HttpDriverInstance,
+  ResponseFormat,
+  ServiceApi,
+  ServiceUrlCompile, VersionConfig
+} from "./types/driver";
+
+// Export enum as value
+export { MethodAPI } from "./types/driver";
 
 class Driver {
   private config: DriverConfig;
@@ -152,8 +164,8 @@ class Driver {
     return this;
   }
 
-  appendExecService() {
-    const httpProAskDriver = Object.assign(this.axiosInstance, {
+  appendExecService(): HttpDriverInstance & AxiosInstance {
+    const httpDriver = Object.assign(this.axiosInstance, {
       execService: async (
         idService: ServiceUrlCompile,
         payload?: any,
@@ -341,18 +353,54 @@ class Driver {
             (endFetchTime - startFetchTime).toFixed(2)
           );
           
-          let resText: string | null = null;
           let data: any = null;
-
-          resText = await res.text();
-          if (!resText) {
-            throw new MalformedResponseError("Malformed response");
-          }
+          
+          // Determine response type from options or content-type header
+          const responseType = (options as any)?.responseType;
+          const contentType = res.headers.get('content-type')?.toLowerCase() || '';
+          
           try {
-            data = JSON.parse(resText);
-            } catch (err) {
-              throw new MalformedResponseError("Malformed response");
+            if (responseType === 'blob') {
+              data = await res.blob();
+            } else if (responseType === 'arraybuffer') {
+              data = await res.arrayBuffer();
+            } else if (responseType === 'text') {
+              data = await res.text();
+            } else if (contentType.startsWith('image/') || 
+                       contentType.startsWith('application/pdf')) {
+              // Auto-detect blob types based on content-type when no explicit responseType
+              data = await res.blob();
+            } else if (contentType.startsWith('application/octet-stream') && !responseType) {
+              // Only default to blob for octet-stream if no explicit responseType
+              data = await res.blob();
+            } else if (contentType.startsWith('text/') && !contentType.includes('application/json')) {
+              // Auto-detect text types when no explicit responseType
+              data = await res.text();
+            } else {
+              // Default behavior: try JSON, fallback to text
+              const resText = await res.text();
+              if (!resText) {
+                throw new MalformedResponseError("Malformed response");
+              }
+              
+              // If content-type suggests JSON or no specific type, try to parse as JSON
+              if (contentType.includes('application/json') || !contentType) {
+                try {
+                  data = JSON.parse(resText);
+                } catch (err) {
+                  throw new MalformedResponseError("Malformed response");
+                }
+              } else {
+                // Non-JSON content type, return as text
+                data = resText;
+              }
             }
+          } catch (err) {
+            if (err instanceof MalformedResponseError) {
+              throw err;
+            }
+            throw new MalformedResponseError("Failed to parse response");
+          }
 
           const response = responseFormat({
             ok: res.ok,
@@ -439,14 +487,14 @@ class Driver {
 
         return {
           fullUrl: null,
+          pathname: null,
           method: null,
-          url: null,
           payload: null,
         };
       },
     });
 
-    return httpProAskDriver;
+    return httpDriver;
   }
 
   // Utilities for normalization and compatibility
@@ -630,7 +678,7 @@ export class DriverBuilder {
     return this;
   }
 
-  build() {
+  build(): HttpDriverInstance & AxiosInstance {
     if (!this.config.baseURL || !this.config.services.length) {
       throw new Error("Missing required configuration values");
     }

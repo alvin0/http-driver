@@ -1,5 +1,5 @@
 import { DriverBuilder } from "../../../src";
-import { MethodAPI, ServiceApi } from "../../../src/utils/driver-contracts";
+import { MethodAPI, ServiceApi } from "../../../src/types/driver";
 
 describe("Version Configuration Integration", () => {
   const services: ServiceApi[] = [

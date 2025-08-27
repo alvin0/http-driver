@@ -2,11 +2,12 @@
 
 ![Test Coverage](https://img.shields.io/badge/Coverage-90%25-brightgreen.svg)
 
-Modern, typed per-service HTTP client for Axios and Fetch (no apisauce). Standardized responses, transform hooks, interceptor support, and AbortController handling across both paths.
+Modern, **fully typed** per-service HTTP client for Axios and Fetch. Complete TypeScript support with automatic type inference, standardized responses, transform hooks, interceptor support, and AbortController handling across both paths.
 
 ## Features
 
-- **Dual HTTP paths**: Axios via execService, Fetch via execServiceByFetch
+- **Full TypeScript Support**: Complete type inference for all methods after build - no manual type casting needed
+- **Dual HTTP paths**: Axios via execService, Fetch via execServiceByFetch  
 - **Flexible Version Management**: Optional dynamic version injection with multiple positioning strategies
 - **Standard ResponseFormat** shape with ok, status, data, headers, duration, problem, originalError
 - **Builder pattern** with full set of hooks (Axios sync/async transforms, error interceptor; Fetch request/response transforms)
@@ -59,10 +60,39 @@ npm install @alvin0/http-driver
 
 ## Quick start
 
+### TypeScript Support
+
+HttpDriver provides complete TypeScript support with automatic type inference:
+
+```ts
+import { DriverBuilder, MethodAPI } from "@alvin0/http-driver";
+
+// After build(), the driver has full type inference
+const driver = new DriverBuilder()
+  .withBaseURL("https://api.example.com")
+  .withServices([
+    { id: "getUser", url: "users/{id}", method: MethodAPI.get }
+  ])
+  .build(); // Returns HttpDriverInstance & AxiosInstance
+
+// Full type inference - no manual casting needed!
+const result = await driver.execService({ id: "getUser", params: { id: "1" } });
+// TypeScript knows: result.ok, result.status, result.data, result.headers, etc.
+
+const fetchResult = await driver.execServiceByFetch({ id: "getUser" });
+// Same complete type inference
+
+// Driver also provides all Axios methods with types
+await driver.get("/direct-endpoint");
+await driver.post("/direct-endpoint", { data: "test" });
+```
+
+### Basic Setup
+
 1) Define services
 
 ```ts
-import { MethodAPI, type ServiceApi } from "@alvin0/http-driver/dist/utils/driver-contracts";
+import { MethodAPI, type ServiceApi } from "@alvin0/http-driver";
 
 const services: ServiceApi[] = [
   { id: "posts.list", url: "posts", method: MethodAPI.get },
@@ -75,7 +105,7 @@ const services: ServiceApi[] = [
 
 ```ts
 import { DriverBuilder } from "@alvin0/http-driver";
-import type { ResponseFormat } from "@alvin0/http-driver/dist/utils/driver-contracts";
+import type { ResponseFormat } from "@alvin0/http-driver";
 
 const httpApi = new DriverBuilder()
   .withBaseURL("https://jsonplaceholder.typicode.com")
@@ -97,6 +127,7 @@ const httpApi = new DriverBuilder()
     register(async (_res) => {
       // async work
     });
+  })
   })
   // Axios error interceptor (optional)
   .withHandleInterceptorErrorAxios((axiosInstance) => async (error) => {

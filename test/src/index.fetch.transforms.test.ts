@@ -1,5 +1,5 @@
 import { DriverBuilder } from "../../src/index";
-import { MethodAPI, type ServiceApi } from "../../src/utils/driver-contracts";
+import { MethodAPI, ServiceApi } from "../../src/types/driver";
 
 describe("Driver Fetch transforms and error mapping", () => {
   const svcGet: ServiceApi = {

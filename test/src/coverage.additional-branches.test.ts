@@ -1,6 +1,6 @@
 import { DriverBuilder } from "../../src/index";
+import { MethodAPI, ServiceApi } from "../../src/types/driver";
 import { HTTPError } from "../../src/types/errors";
-import { MethodAPI, type ServiceApi } from "../../src/utils/driver-contracts";
 import { normalizeError } from "../../src/utils/error-handler";
 
 describe("Additional coverage - non-Error thrown and HTTPError fallback", () => {

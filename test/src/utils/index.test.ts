@@ -1,5 +1,5 @@
 import * as qs from "qs";
-import { MethodAPI, ServiceApi } from "../../../src/utils/driver-contracts";
+import { MethodAPI, ServiceApi } from "../../../src/types/driver";
 import {
     compileBodyFetchWithContextType,
     compileService,

@@ -1,6 +1,6 @@
 import { AxiosHeaders } from "axios";
 import { DriverBuilder } from "../../src/index";
-import { MethodAPI, type ServiceApi } from "../../src/utils/driver-contracts";
+import { MethodAPI, ServiceApi } from "../../src/types/driver";
 
 describe("Axios coverage and branches for Driver (src/index.ts)", () => {
   const svcGet: ServiceApi = {

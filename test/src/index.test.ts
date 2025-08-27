@@ -2,6 +2,7 @@
 
 import { AxiosHeaders } from "axios";
 import { DriverBuilder } from "../../src/index";
+import { MethodAPI, ServiceApi } from "../../src/types/driver";
 import {
   AuthenticationError,
   HTTPError,
@@ -9,9 +10,7 @@ import {
   RedirectError,
   TimeoutError,
   TLSError
-} from "../../src/utils/custom-errors";
-import type { ServiceApi } from "../../src/utils/driver-contracts";
-import { MethodAPI } from "../../src/utils/driver-contracts";
+} from "../../src/types/errors";
 
 // -------------------- Additional Tests --------------------
 

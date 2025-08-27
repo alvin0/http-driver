@@ -49,26 +49,31 @@ function buildFullFeaturedDriver() {
     })
 
     // Axios: error interceptor (basic 401 retry demo)
-    .withHandleInterceptorErrorAxios((axiosInstance: any, _processQueue: any, _isRefreshing: boolean) => {
-      return async (error: any) => {
-        const status = error?.response?.status ?? 0;
+    .withHandleInterceptorErrorAxios(
+      (axiosInstance: any, _processQueue: any, _isRefreshing: boolean) => {
+        return async (error: any) => {
+          const status = error?.response?.status ?? 0;
 
-        // Demonstration: if 401 occurs, retry once with a fake token
-        if (status === 401 && !error?.config?._retry) {
-          (error.config as any)._retry = true;
-          // Simulate token refresh delay and attach Authorization header
-          await new Promise((r) => setTimeout(r, 50));
-          error.config = {
-            ...(error.config || {}),
-            headers: { ...(error.config?.headers || {}), Authorization: "Bearer FAKE-TOKEN" },
-          };
-          return axiosInstance.request(error.config);
-        }
+          // Demonstration: if 401 occurs, retry once with a fake token
+          if (status === 401 && !error?.config?._retry) {
+            (error.config as any)._retry = true;
+            // Simulate token refresh delay and attach Authorization header
+            await new Promise((r) => setTimeout(r, 50));
+            error.config = {
+              ...(error.config || {}),
+              headers: {
+                ...(error.config?.headers || {}),
+                Authorization: "Bearer FAKE-TOKEN",
+              },
+            };
+            return axiosInstance.request(error.config);
+          }
 
-        // Fallback: propagate error
-        return Promise.reject(error);
-      };
-    })
+          // Fallback: propagate error
+          return Promise.reject(error);
+        };
+      }
+    )
 
     // Fetch: request mutator (URL + headers)
     .withAddRequestTransformFetch((url, requestOptions) => {
@@ -134,11 +139,17 @@ export async function runFullBuilderDemo() {
   );
   setTimeout(() => c.abort(), 10);
   const abortRes = await abortPromise;
-  console.log("Aborted Axios =>", { ok: abortRes.ok, status: abortRes.status, problem: abortRes.problem });
+  console.log("Aborted Axios =>", {
+    ok: abortRes.ok,
+    status: abortRes.status,
+    problem: abortRes.problem,
+  });
 
   // 3) Successful execService (Axios)
   console.log("\n[Full-Builder] execService (Axios) success path");
-  const listRes = await driver.execService({ id: JsonPlaceholderPostServiceIds.List });
+  const listRes = await driver.execService({
+    id: JsonPlaceholderPostServiceIds.List,
+  });
   const flags = getFlags();
   console.log("execService =>", {
     ok: listRes.ok,
@@ -163,10 +174,15 @@ export async function runFullBuilderDemo() {
         },
       };
     })
-    .withAddTransformResponseFetch((res) => ({ ...res, data: { fetchDemo: true, original: res.data } } as any))
+    .withAddTransformResponseFetch(
+      (res) =>
+        ({ ...res, data: { fetchDemo: true, original: res.data } } as any)
+    )
     .build();
 
-  const fetchRes = await (fetchDriver as any).execServiceByFetch({ id: DummyjsonPostServiceIds.List });
+  const fetchRes = await (fetchDriver as any).execServiceByFetch({
+    id: DummyjsonPostServiceIds.List,
+  });
   console.log("execServiceByFetch =>", {
     ok: fetchRes.ok,
     status: fetchRes.status,

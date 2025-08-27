@@ -1,4 +1,4 @@
-import { MethodAPI } from "../../../src/utils/driver-contracts";
+import { MethodAPI } from "../../../src/types/driver";
 import { compileUrlByService, httpClientFetch } from "../../../src/utils/index";
 
 // Mock FormData for Node.js environment compatibility

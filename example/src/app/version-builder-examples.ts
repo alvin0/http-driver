@@ -5,7 +5,9 @@ export function runVersionBuilderExamples() {
   console.log("\n=== Version Builder Examples ===");
 
   // Example 1: Default behavior (no version building) - versions in services are ignored
-  console.log("\n1. Default behavior - No version building (versions ignored):");
+  console.log(
+    "\n1. Default behavior - No version building (versions ignored):"
+  );
   const driverNoVersion = new DriverBuilder()
     .withBaseURL("https://api.example.com")
     .withServices([
@@ -16,7 +18,7 @@ export function runVersionBuilderExamples() {
         version: 1, // This version will be completely ignored
       },
       {
-        id: "get-posts", 
+        id: "get-posts",
         url: "posts",
         method: MethodAPI.get,
         version: 5, // This version will also be ignored
@@ -28,7 +30,7 @@ export function runVersionBuilderExamples() {
   const urlInfo1b = driverNoVersion.getInfoURL({ id: "get-posts" });
   console.log("URL without version building (users):", urlInfo1a.fullUrl);
   console.log("URL without version building (posts):", urlInfo1b.fullUrl);
-  // Output: 
+  // Output:
   // https://api.example.com/users
   // https://api.example.com/posts
 
@@ -123,7 +125,7 @@ export function runVersionBuilderExamples() {
   const urlInfo5b = driverGlobal.getInfoURL({ id: "get-posts" });
   console.log("URL with global version:", urlInfo5a.fullUrl);
   console.log("URL with service-specific version:", urlInfo5b.fullUrl);
-  // Output: 
+  // Output:
   // https://api.example.com/v2/users
   // https://api.example.com/v3/posts
 
@@ -139,7 +141,9 @@ export function runVersionBuilderExamples() {
         version: "beta",
       },
     ])
-    .withVersionTemplate("{baseURL}/api/versions/{version}/resources/{endpoint}")
+    .withVersionTemplate(
+      "{baseURL}/api/versions/{version}/resources/{endpoint}"
+    )
     .build();
 
   const urlInfo6 = driverComplex.getInfoURL({ id: "create-user" });
@@ -148,12 +152,12 @@ export function runVersionBuilderExamples() {
 
   // Example 7: Comparison - Same service with and without version building
   console.log("\n7. Side-by-side comparison:");
-  
+
   const serviceDefinition = {
     id: "get-profile",
-    url: "user/profile", 
+    url: "user/profile",
     method: MethodAPI.get,
-    version: 2
+    version: 2,
   };
 
   // Without version building
@@ -162,7 +166,7 @@ export function runVersionBuilderExamples() {
     .withServices([serviceDefinition])
     .build();
 
-  // With version building  
+  // With version building
   const driverWith = new DriverBuilder()
     .withBaseURL("https://api.example.com")
     .withServices([serviceDefinition])
@@ -171,7 +175,7 @@ export function runVersionBuilderExamples() {
 
   const urlWithout = driverWithout.getInfoURL({ id: "get-profile" });
   const urlWith = driverWith.getInfoURL({ id: "get-profile" });
-  
+
   console.log("Same service WITHOUT version building:", urlWithout.fullUrl);
   console.log("Same service WITH version building:   ", urlWith.fullUrl);
   // Output:

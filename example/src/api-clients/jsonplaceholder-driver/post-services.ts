@@ -1,4 +1,4 @@
-import { MethodAPI, ServiceApi } from "../../../../src/utils/driver-contracts";
+import { MethodAPI, ServiceApi } from "../../../../src/types/driver";
 
 export enum JsonPlaceholderPostServiceIds {
   List = "jsonplaceholder.post.list",

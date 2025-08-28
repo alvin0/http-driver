@@ -47,12 +47,12 @@ export declare function compileUrlByService(configServices: DriverConfig, idServ
     [key: string]: any;
 }): CompileUrlResult | null;
 /**
- * Formats a response object with standard details including status, data, and error information.
+ * Formats and standardizes a response object.
  *
- * @param {ResponseFormat<any | null>} response - An object containing response details such as status, data, headers, etc.
- * @returns {ResponseFormat} - A formatted response object.
+ * @param {ResponseFormat<T>} response - An object containing response details such as status, data, headers, etc.
+ * @returns {ResponseFormat<T>} - A formatted response object.
  */
-export declare function responseFormat({ status, data, headers, originalError, duration, problem, }: ResponseFormat<any | null>): ResponseFormat;
+export declare function responseFormat<T = any>({ status, data, headers, originalError, duration, problem, }: ResponseFormat<T>): ResponseFormat<T>;
 /**
  * Compiles a URL using a payload as query parameters if the method is GET.
  *
@@ -86,13 +86,13 @@ export declare function compileBodyFetchWithContextType(contextType: string, pay
  * @param {UrlBuilder} urlBuilder - An object defining URL and request method.
  * @param {object} [payload] - The request payload.
  * @param {object} [options] - Additional fetch options like headers.
- * @returns {Promise<ResponseFormat>} - A promise resolving to the standardized response format.
+ * @returns {Promise<ResponseFormat<T>>} - A promise resolving to the standardized response format.
  */
-export declare function httpClientFetch(urlBuilder: UrlBuilder, payload?: {
+export declare function httpClientFetch<T = any>(urlBuilder: UrlBuilder, payload?: {
     [key: string]: string | object;
 }, options?: {
     [key: string]: any;
-}): Promise<ResponseFormat<any>>;
+}): Promise<ResponseFormat<T>>;
 /**
  * Removes null and undefined values from an object, recursively processing nested objects.
  *

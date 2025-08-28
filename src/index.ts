@@ -166,11 +166,11 @@ class Driver {
 
   appendExecService(): HttpDriverInstance & AxiosInstance {
     const httpDriver = Object.assign(this.axiosInstance, {
-      execService: async (
+      execService: async <T = any>(
         idService: ServiceUrlCompile,
         payload?: any,
         options?: { [key: string]: any }
-      ): Promise<ResponseFormat> => {
+      ): Promise<ResponseFormat<T>> => {
         try {
           const apiInfo = compileUrlByService(
             this.config,
@@ -283,11 +283,11 @@ class Driver {
         }
       },
 
-      execServiceByFetch: async (
+      execServiceByFetch: async <T = any>(
         idService: ServiceUrlCompile,
         payload?: any,
         options?: { [key: string]: any }
-      ): Promise<ResponseFormat> => {
+      ): Promise<ResponseFormat<T>> => {
         try {
           const apiInfo = compileUrlByService(
             this.config,
@@ -498,10 +498,10 @@ class Driver {
   }
 
   // Utilities for normalization and compatibility
-  private static axiosResponseToResponseFormat(
-    res: AxiosResponse,
+  private static axiosResponseToResponseFormat<T = any>(
+    res: AxiosResponse<T>,
     duration: number
-  ): ResponseFormat {
+  ): ResponseFormat<T> {
     return responseFormat({
       ok: res.status >= 200 && res.status <= 299,
       status: res.status,

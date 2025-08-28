@@ -201,17 +201,17 @@ export interface CompiledServiceInfo {
 }
 
 export interface HttpDriverInstance {
-  execService: (
+  execService: <T = any>(
     idService: ServiceUrlCompile,
     payload?: any,
     options?: { [key: string]: any }
-  ) => Promise<ResponseFormat>;
+  ) => Promise<ResponseFormat<T>>;
 
-  execServiceByFetch: (
+  execServiceByFetch: <T = any>(
     idService: ServiceUrlCompile,
     payload?: any,
     options?: { [key: string]: any }
-  ) => Promise<ResponseFormat>;
+  ) => Promise<ResponseFormat<T>>;
 
   getInfoURL: (
     idService: ServiceUrlCompile,

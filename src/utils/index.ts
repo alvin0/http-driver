@@ -184,19 +184,19 @@ export function compileUrlByService(
 }
 
 /**
- * Formats a response object with standard details including status, data, and error information.
+ * Formats and standardizes a response object.
  *
- * @param {ResponseFormat<any | null>} response - An object containing response details such as status, data, headers, etc.
- * @returns {ResponseFormat} - A formatted response object.
+ * @param {ResponseFormat<T>} response - An object containing response details such as status, data, headers, etc.
+ * @returns {ResponseFormat<T>} - A formatted response object.
  */
-export function responseFormat({
+export function responseFormat<T = any>({
   status,
   data,
   headers,
   originalError,
   duration,
   problem,
-}: ResponseFormat<any | null>): ResponseFormat {
+}: ResponseFormat<T>): ResponseFormat<T> {
   let ok: boolean = false;
 
   if (status >= 200 && status <= 299) {
@@ -211,7 +211,7 @@ export function responseFormat({
     status: status,
     headers: headers,
     duration: duration,
-  } as ResponseFormat;
+  } as ResponseFormat<T>;
 }
 
 /**
@@ -279,9 +279,9 @@ export function compileBodyFetchWithContextType(
  * @param {UrlBuilder} urlBuilder - An object defining URL and request method.
  * @param {object} [payload] - The request payload.
  * @param {object} [options] - Additional fetch options like headers.
- * @returns {Promise<ResponseFormat>} - A promise resolving to the standardized response format.
+ * @returns {Promise<ResponseFormat<T>>} - A promise resolving to the standardized response format.
  */
-export async function httpClientFetch(
+export async function httpClientFetch<T = any>(
   urlBuilder: UrlBuilder,
   payload?: {
     [key: string]: string | object;
@@ -289,7 +289,7 @@ export async function httpClientFetch(
   options?: {
     [key: string]: any;
   }
-): Promise<ResponseFormat<any>> {
+): Promise<ResponseFormat<T>> {
   const finalUrl = replaceParamsInUrl(urlBuilder.url, urlBuilder.param ?? {});
   const request = compileUrl(finalUrl, urlBuilder.method, payload, options);
   let requestOptions = { ...options };
@@ -337,33 +337,33 @@ export async function httpClientFetch(
     }
 
     if (!res.ok) {
-      return responseFormat({
+      return responseFormat<T>({
         ok: res.ok,
         duration: duration,
         status: res.status,
         headers: res.headers,
-        data: data,
+        data: data as T,
         problem: res.statusText,
         originalError: res.statusText,
       });
     }
 
-    return responseFormat({
+    return responseFormat<T>({
       ok: res.ok,
       duration: duration,
       status: res.status,
       headers: res.headers,
-      data: data,
+      data: data as T,
       problem: null,
       originalError: null,
     });
   } catch (error) {
-    return responseFormat({
+    return responseFormat<T>({
       ok: false,
       duration: 0,
       originalError: `${error}`,
       problem: `Error fetching data ${error}`,
-      data: null,
+      data: null as T,
       status: 500,
     });
   }

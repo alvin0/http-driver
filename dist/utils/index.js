@@ -203,10 +203,10 @@ function compileUrlByService(configServices, idService, payload, options) {
 }
 exports.compileUrlByService = compileUrlByService;
 /**
- * Formats a response object with standard details including status, data, and error information.
+ * Formats and standardizes a response object.
  *
- * @param {ResponseFormat<any | null>} response - An object containing response details such as status, data, headers, etc.
- * @returns {ResponseFormat} - A formatted response object.
+ * @param {ResponseFormat<T>} response - An object containing response details such as status, data, headers, etc.
+ * @returns {ResponseFormat<T>} - A formatted response object.
  */
 function responseFormat(_a) {
     var status = _a.status, data = _a.data, headers = _a.headers, originalError = _a.originalError, duration = _a.duration, problem = _a.problem;
@@ -280,7 +280,7 @@ exports.compileBodyFetchWithContextType = compileBodyFetchWithContextType;
  * @param {UrlBuilder} urlBuilder - An object defining URL and request method.
  * @param {object} [payload] - The request payload.
  * @param {object} [options] - Additional fetch options like headers.
- * @returns {Promise<ResponseFormat>} - A promise resolving to the standardized response format.
+ * @returns {Promise<ResponseFormat<T>>} - A promise resolving to the standardized response format.
  */
 function httpClientFetch(urlBuilder, payload, options) {
     var _a, _b, _c, _d;

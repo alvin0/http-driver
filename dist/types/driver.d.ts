@@ -168,12 +168,12 @@ export interface CompiledServiceInfo {
     options: Record<string, any>;
 }
 export interface HttpDriverInstance {
-    execService: (idService: ServiceUrlCompile, payload?: any, options?: {
+    execService: <T = any>(idService: ServiceUrlCompile, payload?: any, options?: {
         [key: string]: any;
-    }) => Promise<ResponseFormat>;
-    execServiceByFetch: (idService: ServiceUrlCompile, payload?: any, options?: {
+    }) => Promise<ResponseFormat<T>>;
+    execServiceByFetch: <T = any>(idService: ServiceUrlCompile, payload?: any, options?: {
         [key: string]: any;
-    }) => Promise<ResponseFormat>;
+    }) => Promise<ResponseFormat<T>>;
     getInfoURL: (idService: ServiceUrlCompile, payload?: any) => {
         fullUrl: string | null;
         pathname: string | null;

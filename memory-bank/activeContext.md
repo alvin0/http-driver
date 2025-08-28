@@ -5,10 +5,23 @@ This file tracks the current focus, recent changes, decisions, next steps, and a
 ## Current Focus
 - **COMPLETED**: Fixed all test failures and achieved 97.76% statement coverage
 - **NEW ENHANCEMENTS**: Enhanced `execServiceByFetch` with comprehensive response type support
+- **LATEST**: Fixed ResponseFormat generic typing system to properly support TypeScript generics
 - Continue monitoring for any new issues and maintain high test coverage
 - All 185 tests now pass successfully
 
 ## Recent Changes
+- **Generic Type System Fix (COMPLETED)**:
+  - **Problem**: `ResponseFormat<T>` interface was generic but method signatures always returned `ResponseFormat` (defaulting to `any`)
+  - **Solution**: Updated `HttpDriverInstance` interface and method implementations to support generic types:
+    - Changed `execService: (...) => Promise<ResponseFormat>` to `execService: <T = any>(...) => Promise<ResponseFormat<T>>`
+    - Changed `execServiceByFetch: (...) => Promise<ResponseFormat>` to `execServiceByFetch: <T = any>(...) => Promise<ResponseFormat<T>>`
+    - Updated `responseFormat()` utility function to be generic: `responseFormat<T = any>(...): ResponseFormat<T>`
+    - Updated `httpClientFetch()` to be generic: `httpClientFetch<T = any>(...): Promise<ResponseFormat<T>>`
+    - Fixed type casting issues in utility functions with proper generic type assertions
+  - **Usage**: Now consumers can specify response types: `driver.execService<User>({id: 'getUser'})`
+  - **Backward Compatibility**: All existing code continues to work (defaults to `any` when no type specified)
+  - **Tests**: All 185 tests pass, created demonstration example at [`example/generic-types-demo.ts`](../example/generic-types-demo.ts)
+
 - **Test Fixes (COMPLETED)**:
   - **Fixed Empty Test File**: Updated [`test/type-inference.test.ts`](../test/type-inference.test.ts) with proper type inference tests
   - **Enhanced Fetch Response Handling**: Significantly improved [`execServiceByFetch`](../src/index.ts) to support multiple response types:
